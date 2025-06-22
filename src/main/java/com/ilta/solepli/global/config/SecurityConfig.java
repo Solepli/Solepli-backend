@@ -5,6 +5,7 @@ import java.util.Arrays;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -16,16 +17,21 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import lombok.RequiredArgsConstructor;
 
+import com.ilta.solepli.domain.auth.filter.JwtAuthenticationEntryPoint;
 import com.ilta.solepli.domain.auth.filter.JwtAuthenticationFilter;
-import com.ilta.solepli.domain.auth.service.JwtTokenProvider;
 import com.ilta.solepli.domain.user.util.CustomUserDetailService;
+import com.ilta.solepli.global.exception.handler.JwtAccessDeniedHandler;
+import com.ilta.solepli.global.util.JwtUtil;
 
 @Configuration
 @RequiredArgsConstructor
+@EnableMethodSecurity // @PreAuthorize 사용 가능하게 함
 @EnableWebSecurity
 public class SecurityConfig {
 
-  private final JwtTokenProvider jwtTokenProvider;
+  private final JwtUtil jwtUtil;
+  private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
+  private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
   private final CustomUserDetailService customUserDetailService;
 
   @Bean
@@ -33,6 +39,10 @@ public class SecurityConfig {
     return http.csrf(csrf -> csrf.disable()) // JWT 기반 인증이라 CSRF 비활성화
         .sessionManagement(
             session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+        .exceptionHandling(
+            ex ->
+                ex.authenticationEntryPoint(jwtAuthenticationEntryPoint)
+                    .accessDeniedHandler(jwtAccessDeniedHandler))
         .authorizeHttpRequests(
             auth ->
                 auth.requestMatchers(
@@ -71,7 +81,7 @@ public class SecurityConfig {
         // CORS 설정을 수동으로 추가
         .cors(cors -> cors.configurationSource(corsConfigurationSource()))
         .addFilterBefore(
-            new JwtAuthenticationFilter(jwtTokenProvider, customUserDetailService),
+            new JwtAuthenticationFilter(jwtUtil, customUserDetailService),
             UsernamePasswordAuthenticationFilter.class) // JWT 필터 추가
         .build();
   }

@@ -13,7 +13,7 @@ public record CustomUserDetails(User user) implements UserDetails {
 
   @Override
   public Collection<? extends GrantedAuthority> getAuthorities() {
-    return Collections.singleton(new SimpleGrantedAuthority(user.getRole().toString())); // 역할 권한 설정
+    return Collections.singleton(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()));
   }
 
   @Override

@@ -14,6 +14,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import com.ilta.solepli.domain.auth.entity.LoginType;
 import com.ilta.solepli.global.entity.Timestamped;
 
 @Entity
@@ -42,4 +43,8 @@ public class User extends Timestamped {
 
   @Column(unique = true)
   private String nickname;
+
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false)
+  private LoginType loginType;
 }

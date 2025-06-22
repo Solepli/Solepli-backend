@@ -51,6 +51,7 @@ public class AuthService {
                 .password(passwordEncoder.encode(request.password()))
                 .profileImageUrl(defaultImageUrl)
                 .nickname(userService.generateAdminNickname())
+                .loginType(LoginType.BASIC)
                 .build());
 
     SolmarkPlaceCollection solmarkPlaceCollection =
@@ -88,7 +89,7 @@ public class AuthService {
 
     String loginId = oauthService.getLoginId(oauthService.getAccessToken(code));
 
-    User findUser = userService.findOrSignUpUser(loginId);
+    User findUser = userService.findOrSignUpUser(loginId, loginType);
 
     String accessToken = jwtTokenProvider.generateToken(findUser);
 

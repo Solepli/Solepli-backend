@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
 
+import com.ilta.solepli.domain.auth.entity.LoginType;
 import com.ilta.solepli.domain.solmark.place.entity.SolmarkPlaceCollection;
 import com.ilta.solepli.domain.solmark.place.repository.SolmarkPlaceCollectionRepository;
 import com.ilta.solepli.domain.user.entity.Role;
@@ -58,7 +59,7 @@ public class UserService {
   }
 
   @Transactional
-  public User findOrSignUpUser(String loginId) {
+  public User findOrSignUpUser(String loginId, LoginType loginType) {
 
     Random random = new Random();
     String nickname;
@@ -83,6 +84,7 @@ public class UserService {
                           .loginId(loginId)
                           .profileImageUrl(defaultImageUrl)
                           .nickname(checkedNickname)
+                          .loginType(loginType)
                           .build());
 
               SolmarkPlaceCollection solmarkPlaceCollection =
