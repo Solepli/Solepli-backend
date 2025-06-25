@@ -96,8 +96,10 @@ public enum ErrorCode {
   COLLECTION_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 저장 리스트 입니다."),
 
   // 쏠루트 관련 에러
-  SOLROUTE_ACCESS_DENIED(HttpStatus.FORBIDDEN, "권한이 없거나 Solroute가 존재하지 않습니다.");
-  ;
+  SOLROUTE_ACCESS_DENIED(HttpStatus.FORBIDDEN, "권한이 없거나 Solroute가 존재하지 않습니다."),
+
+  // 메일 관련 에러
+  MAIL_SEND_FAIL(HttpStatus.INTERNAL_SERVER_ERROR, "메일 발송 중 오류가 발생했습니다.");
 
   private final HttpStatus httpStatus;
   private final String message;
