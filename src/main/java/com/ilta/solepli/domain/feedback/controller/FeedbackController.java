@@ -9,7 +9,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.mail.MessagingException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -30,8 +29,7 @@ public class FeedbackController {
   @PostMapping("")
   public ResponseEntity<SuccessResponse<Void>> sendFeedbackEmail(
       @AuthenticationPrincipal CustomUserDetails customUserDetails,
-      @Valid @RequestBody AddFeedbackRequest addFeedbackRequest)
-      throws MessagingException {
+      @Valid @RequestBody AddFeedbackRequest addFeedbackRequest) {
 
     feedbackService.sendFeedbackEmail(customUserDetails, addFeedbackRequest);
 
