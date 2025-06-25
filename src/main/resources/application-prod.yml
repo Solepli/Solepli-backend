@@ -44,6 +44,20 @@ spring:
       ssl-enable: true
       skip-ssl-verify: false
 
+  # mail
+  mail:
+    host: smtp.gmail.com # 구글 SMTP 서버 주소
+    port: 587 # 구글 SMTP 포트 번호
+    username: ${MAIL_USERNAME} # 사용자 이메일
+    password: ${MAIL_PASSWORD} # 사용자 앱 비밀번호
+    properties:
+      mail:
+        smtp:
+          auth: true # 사용자 인증 여부
+          timeout: 5000 # 이메일 전송 타임아웃 시간
+          starttls:
+            enable: true # TLS를 통해 안전한 통신 사용 여부
+
 # logging
 logging:
   level:
