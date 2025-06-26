@@ -2,6 +2,7 @@ package com.ilta.solepli.global.config;
 
 import java.util.Arrays;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -33,6 +34,9 @@ public class SecurityConfig {
   private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
   private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
   private final CustomUserDetailService customUserDetailService;
+
+  @Value("${frontend.origin}")
+  private String frontEndOrigin;
 
   @Bean
   public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -95,7 +99,8 @@ public class SecurityConfig {
         Arrays.asList(
             "http://localhost:3000",
             "http://localhost:8080",
-            "http://localhost:5173")); // 추후 배포 시 변경 필요
+            "http://localhost:5173",
+            frontEndOrigin)); // 추후 배포 시 변경 필요
     configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
     configuration.setAllowedHeaders(
         Arrays.asList("X-Requested-With", "Content-Type", "Authorization", "X-XSRF-token"));
