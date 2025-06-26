@@ -35,7 +35,7 @@ public class SwaggerConfig {
                     .bearerFormat("JWT"));
 
     ArrayList<Server> servers = new ArrayList<>();
-    servers.add(new Server().url("http://" + serverUrl).description("Solepli Server"));
+    servers.add(new Server().url("https://" + serverUrl).description("Solepli Server"));
     servers.add(new Server().url("http://localhost:8080").description("Local Server"));
 
     return new OpenAPI()
