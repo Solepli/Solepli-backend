@@ -90,6 +90,9 @@ management:
 server:
   url: ${SERVER_URL}
 
+frontend:
+  origin: ${FRONTEND_ORIGIN}
+
 # AWS S3
 cloud:
   aws:
