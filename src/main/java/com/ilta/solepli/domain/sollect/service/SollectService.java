@@ -252,13 +252,13 @@ public class SollectService {
         content =
             SollectDetailResponse.SollectContent.builder()
                 .type(sollectContent.getType())
-                .imageUrl(sollectContent.getImageUrl())
+                .content(sollectContent.getImageUrl())
                 .build();
       } else if (sollectContent.getType().equals(ContentType.TEXT)) {
         content =
             SollectDetailResponse.SollectContent.builder()
                 .type(sollectContent.getType())
-                .text(sollectContent.getText())
+                .content(sollectContent.getText())
                 .build();
       }
       contents.add(content);
@@ -280,6 +280,7 @@ public class SollectService {
 
       SollectDetailResponse.PlaceSummary placeSummary =
           SollectDetailResponse.PlaceSummary.builder()
+              .placeId(place.getId())
               .name(place.getName())
               .detailedCategory(place.getTypes())
               .recommendationPercent(recommendationPercent)

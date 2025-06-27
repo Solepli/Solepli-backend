@@ -73,7 +73,7 @@ public class AuthService {
 
     String accessToken = jwtTokenProvider.generateToken(user);
 
-    return LoginResponse.from(accessToken, user.getRole());
+    return LoginResponse.from(user.getId(), accessToken, user.getRole());
   }
 
   @Transactional
@@ -93,6 +93,6 @@ public class AuthService {
 
     String accessToken = jwtTokenProvider.generateToken(findUser);
 
-    return LoginResponse.from(accessToken, findUser.getRole());
+    return LoginResponse.from(findUser.getId(), accessToken, findUser.getRole());
   }
 }
