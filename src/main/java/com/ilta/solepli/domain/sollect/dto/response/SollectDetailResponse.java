@@ -24,10 +24,11 @@ public record SollectDetailResponse(
     Long markedCount,
     List<PlaceSummary> placeSummaries) {
   @Builder
-  public record SollectContent(ContentType type, String imageUrl, String text) {}
+  public record SollectContent(ContentType type, String content) {}
 
   @Builder
   public record PlaceSummary(
+      Long placeId,
       String name,
       String detailedCategory,
       Integer recommendationPercent,
