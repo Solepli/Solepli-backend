@@ -24,10 +24,10 @@ import com.ilta.solepli.global.exception.ErrorCode;
 @RequiredArgsConstructor
 public class FeedbackService {
 
-  @Value("${spring.mail.username}")
+  @Value("${mail.to}")
   private String toEmail; // 수신 메일 설정
 
-  @Value("${spring.mail.username}")
+  @Value("${mail.from}")
   private String fromEmail; // 발신 메일 설정
 
   private static final String subject = "쏠플리 사용자 의견"; // 메일 제목
@@ -54,7 +54,7 @@ public class FeedbackService {
                               - 사용자 닉네임: %s<br>
                               - 전송 시각: %s
                               """,
-              req.feedback(), user.getLoginId(), now);
+              req.feedback(), user.getNickname(), now);
 
       helper.setTo(toEmail); // 받는 사람
       helper.setFrom(fromEmail); // 보내는 사람
