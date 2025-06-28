@@ -233,80 +233,8 @@ public class SollectService {
     List<SollectPlace> sollectPlaces =
         sollectPlaceRepository.findBySollectIdWithPlace(sollect.getId());
 
-    // 썸네일 이미지 URL
-    String thumbnailImageUrl = sollectContents.get(0).getImageUrl();
-
-    // 장소 정보
-    Place firstPlace = sollectPlaces.get(0).getPlace();
-    String placeName = firstPlace.getName();
-    Integer otherPlaceCount = sollectPlaces.size() - 1;
-
-    // 쏠렉트 내용
-    List<SollectDetailResponse.SollectContent> contents = new ArrayList<>();
-    for (SollectContent sollectContent : sollectContents) {
-      if (sollectContent.getIsThumbnail()) {
-        continue;
-      }
-      SollectDetailResponse.SollectContent content = null;
-      if (sollectContent.getType().equals(ContentType.IMAGE)) {
-        content =
-            SollectDetailResponse.SollectContent.builder()
-                .type(sollectContent.getType())
-                .content(sollectContent.getImageUrl())
-                .build();
-      } else if (sollectContent.getType().equals(ContentType.TEXT)) {
-        content =
-            SollectDetailResponse.SollectContent.builder()
-                .type(sollectContent.getType())
-                .content(sollectContent.getText())
-                .build();
-      }
-      contents.add(content);
-    }
-
-    // 쏠렉트 저장 수
-    Long markedCount = solmarkSollectRepository.countSolmarkSollectsBySollect(sollect);
-
-    // 해당 유저의 장소 쏠마크 여부
-    Set<Long> makredSet = getSolmarkedPlaceIds(user, sollectPlaces);
-
-    // 장소 요약 정보
-    List<SollectDetailResponse.PlaceSummary> placeSummaries = new ArrayList<>();
-    for (SollectPlace sollectPlace : sollectPlaces) {
-      Place place = sollectPlace.getPlace();
-      List<String> tags = placeRepository.getTopTagsForPlace(place.getId(), 3);
-      Integer recommendationPercent = placeRepository.getRecommendationPercent(place.getId());
-      boolean isMarked = makredSet.contains(place.getId());
-
-      SollectDetailResponse.PlaceSummary placeSummary =
-          SollectDetailResponse.PlaceSummary.builder()
-              .placeId(place.getId())
-              .name(place.getName())
-              .detailedCategory(place.getTypes())
-              .recommendationPercent(recommendationPercent)
-              .tags(tags)
-              .rating(PlaceUtil.truncateTo2Decimals(place.getRating()))
-              .isMarked(isMarked)
-              .build();
-
-      placeSummaries.add(placeSummary);
-    }
-
     SollectDetailResponse response =
-        SollectDetailResponse.builder()
-            .thumbnailImageUrl(thumbnailImageUrl)
-            .title(sollect.getTitle())
-            .placeName(placeName)
-            .otherPlaceCount(otherPlaceCount)
-            .district(firstPlace.getDistrict())
-            .neighborhood(firstPlace.getNeighborhood())
-            .profileImageUrl(writer.getProfileImageUrl())
-            .nickname(writer.getNickname())
-            .createdAt(sollect.getCreatedAt())
-            .contents(contents)
-            .markedCount(markedCount)
-            .placeSummaries(placeSummaries)
-            .build();
+        toSollectDetailResponse(sollect, writer, user, sollectContents, sollectPlaces);
 
     return response;
   }
@@ -562,5 +490,93 @@ public class SollectService {
                 .hasNext(hasNext)
                 .build())
         .build();
+  }
+
+  private SollectDetailResponse toSollectDetailResponse(
+      Sollect sollect,
+      User writer,
+      User user,
+      List<SollectContent> sollectContents,
+      List<SollectPlace> sollectPlaces) {
+    // 썸네일 이미지 URL
+    String thumbnailImageUrl = sollectContents.get(0).getImageUrl();
+
+    // 장소 정보
+    Place firstPlace = sollectPlaces.get(0).getPlace();
+    String placeName = firstPlace.getName();
+    Integer otherPlaceCount = sollectPlaces.size() - 1;
+
+    // 쏠렉트 내용
+    List<SollectDetailResponse.SollectContent> contents = new ArrayList<>();
+    for (SollectContent sollectContent : sollectContents) {
+      if (sollectContent.getIsThumbnail()) {
+        continue;
+      }
+      SollectDetailResponse.SollectContent content = null;
+      if (sollectContent.getType().equals(ContentType.IMAGE)) {
+        content =
+            SollectDetailResponse.SollectContent.builder()
+                .type(sollectContent.getType())
+                .content(sollectContent.getImageUrl())
+                .build();
+      } else if (sollectContent.getType().equals(ContentType.TEXT)) {
+        content =
+            SollectDetailResponse.SollectContent.builder()
+                .type(sollectContent.getType())
+                .content(sollectContent.getText())
+                .build();
+      }
+      contents.add(content);
+    }
+
+    // 해당 유저의 쏠렉트 쏠마크 여부
+    Set<Long> makredSollectSet = getMarkedSet(user);
+
+    // 쏠렉트 저장 수
+    Long markedCount = solmarkSollectRepository.countSolmarkSollectsBySollect(sollect);
+
+    // 해당 유저의 장소 쏠마크 여부
+    Set<Long> makredPlaceSet = getSolmarkedPlaceIds(user, sollectPlaces);
+
+    // 장소 요약 정보
+    List<SollectDetailResponse.PlaceSummary> placeSummaries = new ArrayList<>();
+    for (SollectPlace sollectPlace : sollectPlaces) {
+      Place place = sollectPlace.getPlace();
+      List<String> tags = placeRepository.getTopTagsForPlace(place.getId(), 3);
+      Integer recommendationPercent = placeRepository.getRecommendationPercent(place.getId());
+      boolean isMarked = makredPlaceSet.contains(place.getId());
+
+      SollectDetailResponse.PlaceSummary placeSummary =
+          SollectDetailResponse.PlaceSummary.builder()
+              .placeId(place.getId())
+              .name(place.getName())
+              .detailedCategory(place.getTypes())
+              .recommendationPercent(recommendationPercent)
+              .tags(tags)
+              .rating(PlaceUtil.truncateTo2Decimals(place.getRating()))
+              .isMarked(isMarked)
+              .build();
+
+      placeSummaries.add(placeSummary);
+    }
+
+    SollectDetailResponse response =
+        SollectDetailResponse.builder()
+            .writerId(writer.getId())
+            .thumbnailImageUrl(thumbnailImageUrl)
+            .title(sollect.getTitle())
+            .placeName(placeName)
+            .otherPlaceCount(otherPlaceCount)
+            .district(firstPlace.getDistrict())
+            .neighborhood(firstPlace.getNeighborhood())
+            .profileImageUrl(writer.getProfileImageUrl())
+            .nickname(writer.getNickname())
+            .createdAt(sollect.getCreatedAt())
+            .contents(contents)
+            .markedCount(markedCount)
+            .isMarked(makredSollectSet.contains(sollect.getId()))
+            .placeSummaries(placeSummaries)
+            .build();
+    return response;
   }
 }
