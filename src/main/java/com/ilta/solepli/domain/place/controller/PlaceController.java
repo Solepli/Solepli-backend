@@ -3,17 +3,18 @@ package com.ilta.solepli.domain.place.controller;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
+import com.ilta.solepli.domain.place.dto.reqeust.RequestAddPlaceRequest;
 import com.ilta.solepli.domain.place.dto.response.PlaceSearchResponse;
 import com.ilta.solepli.domain.place.service.PlaceService;
+import com.ilta.solepli.domain.user.util.CustomUserDetails;
 import com.ilta.solepli.global.response.SuccessResponse;
 
 @RestController
@@ -32,5 +33,16 @@ public class PlaceController {
     List<PlaceSearchResponse> searchContents = placeService.getSearchPlaces(keyword);
 
     return ResponseEntity.ok(SuccessResponse.successWithData(searchContents));
+  }
+
+  @Operation(summary = "장소 추가 요청 API", description = "사용자가 장소 추가 요청 하는 API 입니다.")
+  @PostMapping("/request")
+  public ResponseEntity<SuccessResponse<Void>> requestAddPlace(
+      @AuthenticationPrincipal CustomUserDetails customUserDetails,
+      @Valid @RequestBody RequestAddPlaceRequest requestAddPlaceRequest) {
+
+    placeService.requestAddPlace(customUserDetails, requestAddPlaceRequest);
+
+    return ResponseEntity.ok(SuccessResponse.successWithNoData("장소 추가 요청 성공"));
   }
 }

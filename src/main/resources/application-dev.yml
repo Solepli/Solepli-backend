@@ -44,7 +44,7 @@ spring:
       ssl-enable: false
       skip-ssl-verify: true
 
-  # mail
+  # SMTP
   mail:
     host: smtp.gmail.com # 구글 SMTP 서버 주소
     port: 587 # 구글 SMTP 포트 번호
@@ -105,3 +105,8 @@ cloud:
       bucket: ${S3_BUCKET}
     stack:
       auto: false
+
+# mail
+mail:
+  to: ${SOLEPLI_MAIL} # 수신 메일
+  from: ${MAIL_USERNAME} # 발신 메일
