@@ -72,7 +72,7 @@ public class ProfileController {
                   @Content(
                       mediaType = MediaType.APPLICATION_OCTET_STREAM_VALUE,
                       schema = @Schema(type = "string", format = "binary")))
-          @RequestPart(name = "files", required = false)
+          @RequestPart(name = "file", required = false)
           MultipartFile file,
       @AuthenticationPrincipal CustomUserDetails userDetails) {
 
