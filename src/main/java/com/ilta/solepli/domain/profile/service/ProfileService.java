@@ -1,7 +1,9 @@
 package com.ilta.solepli.domain.profile.service;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import lombok.RequiredArgsConstructor;
 
@@ -11,12 +13,17 @@ import com.ilta.solepli.domain.user.entity.User;
 import com.ilta.solepli.domain.user.repository.UserRepository;
 import com.ilta.solepli.global.exception.CustomException;
 import com.ilta.solepli.global.exception.ErrorCode;
+import com.ilta.solepli.global.service.S3Service;
 
 @Service
 @RequiredArgsConstructor
 public class ProfileService {
 
   private final UserRepository userRepository;
+  private final S3Service s3Service;
+
+  @Value("${DEFAULT_PROFILE_URL}")
+  private String defaultImageUrl;
 
   @Transactional(readOnly = true)
   public UserProfileResponse getProfile(User user) {
@@ -46,5 +53,26 @@ public class ProfileService {
     }
 
     return true;
+  }
+
+  @Transactional
+  public void patchProfile(User user, String nickname, MultipartFile file) {
+
+    // 매개변수 user는 Detached 객체여서 반영이 안됌
+    User findUser =
+        userRepository
+            .findById(user.getId())
+            .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+    findUser.patchNickname(nickname);
+
+    if (file != null) {
+      if (!findUser.getProfileImageUrl().equals(defaultImageUrl)) {
+        s3Service.deleteProfileImage(findUser.getProfileImageUrl());
+      }
+
+      String profileImageUrl = s3Service.uploadProfileImage(file);
+      findUser.patchProfileImageUrl(profileImageUrl);
+    }
   }
 }

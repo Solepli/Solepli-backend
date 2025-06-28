@@ -47,4 +47,14 @@ public class User extends Timestamped {
   @Enumerated(EnumType.STRING)
   @Column(nullable = false)
   private LoginType loginType;
+
+  public void patchNickname(String nickname) {
+    if (nickname != null) {
+      this.nickname = nickname;
+    }
+  }
+
+  public void patchProfileImageUrl(String profileImageUrl) {
+    this.profileImageUrl = profileImageUrl;
+  }
 }
