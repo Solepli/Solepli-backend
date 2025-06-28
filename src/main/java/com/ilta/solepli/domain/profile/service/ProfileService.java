@@ -7,6 +7,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import lombok.RequiredArgsConstructor;
 
+import com.ilta.solepli.domain.profile.dto.request.UserProfilePatchRequest;
 import com.ilta.solepli.domain.profile.dto.response.UserProfileResponse;
 import com.ilta.solepli.domain.profile.validator.NicknameValidator;
 import com.ilta.solepli.domain.user.entity.User;
@@ -56,7 +57,7 @@ public class ProfileService {
   }
 
   @Transactional
-  public void patchProfile(User user, String nickname, MultipartFile file) {
+  public void patchProfile(User user, UserProfilePatchRequest request, MultipartFile file) {
 
     // 매개변수 user는 Detached 객체여서 반영이 안됌
     User findUser =
@@ -64,7 +65,9 @@ public class ProfileService {
             .findById(user.getId())
             .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
-    findUser.patchNickname(nickname);
+    if (request != null) {
+      findUser.patchNickname(request.nickname());
+    }
 
     if (file != null) {
       if (!findUser.getProfileImageUrl().equals(defaultImageUrl)) {

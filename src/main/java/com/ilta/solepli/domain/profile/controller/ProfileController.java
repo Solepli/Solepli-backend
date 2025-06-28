@@ -76,7 +76,7 @@ public class ProfileController {
           MultipartFile file,
       @AuthenticationPrincipal CustomUserDetails userDetails) {
 
-    profileService.patchProfile(userDetails.user(), request.nickname(), file);
+    profileService.patchProfile(userDetails.user(), request, file);
 
     return ResponseEntity.ok().body(SuccessResponse.successWithNoData("프로필 수정 성공"));
   }
