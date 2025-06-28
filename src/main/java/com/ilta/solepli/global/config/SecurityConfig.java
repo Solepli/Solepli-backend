@@ -78,7 +78,8 @@ public class SecurityConfig {
                         "/api/place/search",
                         "/api/solroute/place/nearby/*",
                         "/api/solroute/place/*",
-                        "/api/sollect/recommend")
+                        "/api/sollect/recommend",
+                        "/api/profile/validate/nickname")
                     .permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/sollect/*")
                     .permitAll()
