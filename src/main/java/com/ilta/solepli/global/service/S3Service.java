@@ -118,7 +118,6 @@ public class S3Service {
 
   public void deleteSollectImage(String fileUrl) {
     try {
-      System.out.println(extractKeyFromUrl(fileUrl));
       amazonS3.deleteObject(bucketName, extractKeyFromUrl(fileUrl));
     } catch (AmazonServiceException e) {
       throw new CustomException(ErrorCode.S3_DELETE_FAILURE);

@@ -27,4 +27,7 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
                       ORDER BY r.createdAt DESC
                   """)
   List<Review> findByWithImagesAndUserByPlaceId(@Param("placeId") Long placeId, Pageable pageable);
+
+  @Query("SELECT r FROM Review r JOIN FETCH r.reviewImages WHERE r.user = :user")
+  List<Review> findAllByUserWithImages(@Param("user") User user);
 }
