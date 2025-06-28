@@ -37,12 +37,12 @@ public class ProfileService {
       throw new CustomException(ErrorCode.EXCEEDS_LENGTH_NICKNAME);
     }
 
-    if (!NicknameValidator.isValidFormat(nickname)) {
-      throw new CustomException(ErrorCode.INVALID_FORMAT_NICKNAME);
-    }
-
     if (userRepository.existsByNickname((nickname))) {
       throw new CustomException(ErrorCode.DUPLICATED_NICKNAME);
+    }
+
+    if (!NicknameValidator.isValidFormat(nickname)) {
+      throw new CustomException(ErrorCode.INVALID_FORMAT_NICKNAME);
     }
 
     return true;
