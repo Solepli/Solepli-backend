@@ -10,6 +10,7 @@ import com.ilta.solepli.domain.sollect.entity.ContentType;
 
 @Builder
 public record SollectDetailResponse(
+    Long writerId,
     String thumbnailImageUrl,
     String title,
     String placeName,
@@ -22,6 +23,7 @@ public record SollectDetailResponse(
         LocalDateTime createdAt,
     List<SollectContent> contents,
     Long markedCount,
+    Boolean isMarked,
     List<PlaceSummary> placeSummaries) {
   @Builder
   public record SollectContent(ContentType type, String content) {}
