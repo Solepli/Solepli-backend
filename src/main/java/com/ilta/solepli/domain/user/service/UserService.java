@@ -1,5 +1,6 @@
 package com.ilta.solepli.domain.user.service;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 
@@ -10,11 +11,21 @@ import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 
 import com.ilta.solepli.domain.auth.entity.LoginType;
+import com.ilta.solepli.domain.review.entity.Review;
+import com.ilta.solepli.domain.review.entity.mapping.ReviewImage;
+import com.ilta.solepli.domain.review.repository.ReviewRepository;
+import com.ilta.solepli.domain.sollect.entity.ContentType;
+import com.ilta.solepli.domain.sollect.entity.Sollect;
+import com.ilta.solepli.domain.sollect.entity.SollectContent;
+import com.ilta.solepli.domain.sollect.repository.SollectRepository;
 import com.ilta.solepli.domain.solmark.place.entity.SolmarkPlaceCollection;
 import com.ilta.solepli.domain.solmark.place.repository.SolmarkPlaceCollectionRepository;
 import com.ilta.solepli.domain.user.entity.Role;
 import com.ilta.solepli.domain.user.entity.User;
 import com.ilta.solepli.domain.user.repository.UserRepository;
+import com.ilta.solepli.global.exception.CustomException;
+import com.ilta.solepli.global.exception.ErrorCode;
+import com.ilta.solepli.global.service.S3Service;
 
 @Service
 @RequiredArgsConstructor
@@ -22,6 +33,9 @@ public class UserService {
 
   private final UserRepository userRepository;
   private final SolmarkPlaceCollectionRepository solmarkPlaceCollectionRepository;
+  private final ReviewRepository reviewRepository;
+  private final SollectRepository sollectRepository;
+  private final S3Service s3Service;
 
   private final String[] ADJECTIVES = {
     "귀여운", "용감한", "날쌘", "온순한", "영리한", "수줍은", "호기심많은", "느긋한", "활발한", "우아한", "엉뚱한", "애교많은", "부지런한"
@@ -99,5 +113,38 @@ public class UserService {
   @Transactional(readOnly = true)
   public boolean checkNickname(String nickname) {
     return userRepository.existsByNickname(nickname);
+  }
+
+  @Transactional
+  public void deleteUser(User user) {
+    User findUser =
+        userRepository
+            .findById(user.getId())
+            .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+    // 리뷰 이미지 S3에서 삭제
+    List<Review> reviews = reviewRepository.findAllByUserWithImages(findUser);
+    for (Review review : reviews) {
+      for (ReviewImage reviewImage : review.getReviewImages()) {
+        s3Service.deleteReviewImage(reviewImage.getImageUrl());
+      }
+    }
+
+    // 쏠렉트 이미지 S3에서 삭제
+    List<Sollect> sollects = sollectRepository.findAllByUser(findUser);
+    for (Sollect sollect : sollects) {
+      for (SollectContent sollectContent : sollect.getSollectContents()) {
+        if (sollectContent.getType().equals(ContentType.IMAGE)) {
+          s3Service.deleteSollectImage(sollectContent.getImageUrl());
+        }
+      }
+    }
+
+    // 프로필 이미지 S3에서 삭제
+    if (!findUser.getProfileImageUrl().equals(defaultImageUrl)) {
+      s3Service.deleteProfileImage(findUser.getProfileImageUrl());
+    }
+
+    userRepository.delete(findUser);
   }
 }
