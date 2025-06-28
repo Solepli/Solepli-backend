@@ -99,7 +99,12 @@ public enum ErrorCode {
   SOLROUTE_ACCESS_DENIED(HttpStatus.FORBIDDEN, "권한이 없거나 Solroute가 존재하지 않습니다."),
 
   // 메일 관련 에러
-  MAIL_SEND_FAIL(HttpStatus.INTERNAL_SERVER_ERROR, "메일 발송 중 오류가 발생했습니다.");
+  MAIL_SEND_FAIL(HttpStatus.INTERNAL_SERVER_ERROR, "메일 발송 중 오류가 발생했습니다."),
+
+  // 닉네임 검증 관련 에러
+  INVALID_FORMAT_NICKNAME(HttpStatus.BAD_REQUEST, "닉네임 형식이 유효하지 않습니다."),
+  EXCEEDS_LENGTH_NICKNAME(HttpStatus.BAD_REQUEST, "닉네임은 최대 20자까지 입력 가능합니다."),
+  DUPLICATED_NICKNAME(HttpStatus.BAD_REQUEST, "이미 사용 중인 닉네임입니다.");
 
   private final HttpStatus httpStatus;
   private final String message;
