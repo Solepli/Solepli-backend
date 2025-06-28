@@ -4,6 +4,7 @@ import java.time.format.DateTimeParseException;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.BindException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -54,6 +55,20 @@ public class GlobalExceptionHandler {
 
     ErrorResponse response =
         ErrorResponse.create().message(ex.getMessage()).httpStatus(HttpStatus.BAD_REQUEST);
+
+    return ResponseEntity.badRequest().body(response);
+  }
+
+  @ExceptionHandler(value = {HttpMessageNotReadableException.class})
+  public ResponseEntity<ErrorResponse> handleHttpMessageNotReadableException(
+      HttpMessageNotReadableException ex) {
+
+    log.error("HttpMessageNotReadableException : {}", ex.getMessage());
+
+    String message = "요청 형식이 잘못되었습니다. (JSON 파싱 오류)";
+
+    ErrorResponse response =
+        ErrorResponse.create().message(message).httpStatus(HttpStatus.BAD_REQUEST);
 
     return ResponseEntity.badRequest().body(response);
   }
