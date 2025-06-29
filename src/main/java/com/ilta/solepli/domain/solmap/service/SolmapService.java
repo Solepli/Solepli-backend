@@ -612,12 +612,12 @@ public class SolmapService {
         placeRepository.getReviewThumbnails(place.getId(), MAX_PLACE_THUMBNAIL_LIMIT);
 
     // 특정 장소의 쏠마크 개수 조회
-    Integer markedCount = solmarkPlaceRepository.countByPlaceAndDeletedAtIsNull(place);
+    Integer markCnt = solmarkPlaceRepository.countByPlaceAndDeletedAtIsNull(place);
 
     // 장소 상세 정보 DTO 매핑
     PlaceDetail placeDetail =
         mapToPlaceDetail(
-            place, openStatus, placeTags, recommendationPercent, thumbnails, user, markedCount);
+            place, openStatus, placeTags, recommendationPercent, thumbnails, user, markCnt);
 
     // 특정 장소 리뷰를 최신순, 최대 INITIAL_REVIEW_LIMIT 조회
     PageRequest pageRequest = PageRequest.of(0, INITIAL_REVIEW_LIMIT);
@@ -659,7 +659,7 @@ public class SolmapService {
       Integer recommendationPercent,
       List<String> thumbnails,
       User user,
-      Integer markedCount) {
+      Integer markCnt) {
 
     // 특정 장소의 사용자 쏠마크 여부
     boolean isMarked = isPlaceSolmarkedByUser(user, place);
@@ -670,7 +670,7 @@ public class SolmapService {
         .category(getMainCategory(place))
         .detailedCategory(place.getTypes())
         .isMarked(isMarked)
-        .markedCount(markedCount)
+        .markCnt(markCnt)
         .latitude(place.getLatitude())
         .longitude(place.getLongitude())
         .isOpen(openStatus.isOpen())
