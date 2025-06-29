@@ -13,7 +13,7 @@ public record PlaceDetail(
     String category,
     String detailedCategory,
     Boolean isMarked,
-    Integer markCnt,
+    Integer markedCount,
     Double latitude,
     Double longitude,
     Boolean isOpen,
