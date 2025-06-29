@@ -104,7 +104,10 @@ public enum ErrorCode {
   // 닉네임 검증 관련 에러
   INVALID_FORMAT_NICKNAME(HttpStatus.BAD_REQUEST, "닉네임 형식이 유효하지 않습니다."),
   EXCEEDS_LENGTH_NICKNAME(HttpStatus.BAD_REQUEST, "닉네임은 최대 20자까지 입력 가능합니다."),
-  DUPLICATED_NICKNAME(HttpStatus.BAD_REQUEST, "이미 사용 중인 닉네임입니다.");
+  DUPLICATED_NICKNAME(HttpStatus.BAD_REQUEST, "이미 사용 중인 닉네임입니다."),
+
+  // 공지사항 관련 에러
+  NOTICE_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 공지사항입니다.");
 
   private final HttpStatus httpStatus;
   private final String message;
