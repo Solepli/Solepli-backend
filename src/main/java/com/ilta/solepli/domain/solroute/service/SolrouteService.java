@@ -162,6 +162,14 @@ public class SolrouteService {
     List<SolrouteDetailResponse.PlaceInfo> placeInfos =
         solroutePlaces.stream().map(SolrouteDetailResponse.PlaceInfo::from).toList();
 
+    List<SolroutePlace> solroutePlacesWithPlaceAndPlaceCategoryAndCategory =
+        solroutePlaceRepository.findBySolrouteIdWithPlaceAndCategory(solroute.getId());
+
+    List<SolrouteDetailResponse.PlaceCoord> placeCoords =
+        solroutePlacesWithPlaceAndPlaceCategoryAndCategory.stream()
+            .map(SolrouteDetailResponse.PlaceCoord::from)
+            .toList();
+
     return SolrouteDetailResponse.builder()
         .id(solroute.getId())
         .iconId(solroute.getIconId())
@@ -169,6 +177,7 @@ public class SolrouteService {
         .placeCount(solroute.getSolroutePlaces().size())
         .status(solroute.getStatus().getDescription())
         .placeInfos(placeInfos)
+        .placeCoords(placeCoords)
         .build();
   }
 
