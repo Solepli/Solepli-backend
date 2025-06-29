@@ -13,6 +13,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import com.ilta.solepli.domain.notice.dto.request.NoticeUpdateRequest;
 import com.ilta.solepli.global.entity.Timestamped;
 
 @Entity
@@ -34,4 +35,13 @@ public class Notice extends Timestamped {
   @Lob
   @Column(nullable = false)
   private String content;
+
+  public void update(NoticeUpdateRequest request) {
+    if (request.title() != null) {
+      this.title = request.title();
+    }
+    if (request.content() != null) {
+      this.content = request.content();
+    }
+  }
 }

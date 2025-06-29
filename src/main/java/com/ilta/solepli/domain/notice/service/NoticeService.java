@@ -6,8 +6,11 @@ import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 
 import com.ilta.solepli.domain.notice.dto.request.NoticeCreateRequest;
+import com.ilta.solepli.domain.notice.dto.request.NoticeUpdateRequest;
 import com.ilta.solepli.domain.notice.entity.Notice;
 import com.ilta.solepli.domain.notice.repository.NoticeRepository;
+import com.ilta.solepli.global.exception.CustomException;
+import com.ilta.solepli.global.exception.ErrorCode;
 
 @Service
 @RequiredArgsConstructor
@@ -20,5 +23,15 @@ public class NoticeService {
     Notice notice = request.toEntity();
 
     noticeRepository.save(notice);
+  }
+
+  @Transactional
+  public void updateNotice(NoticeUpdateRequest request, Long id) {
+    Notice notice =
+        noticeRepository
+            .findById(id)
+            .orElseThrow(() -> new CustomException(ErrorCode.NOTICE_NOT_FOUND));
+
+    notice.update(request);
   }
 }
