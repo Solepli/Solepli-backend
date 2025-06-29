@@ -20,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 
 import com.ilta.solepli.domain.notice.dto.request.NoticeCreateRequest;
 import com.ilta.solepli.domain.notice.dto.request.NoticeUpdateRequest;
+import com.ilta.solepli.domain.notice.dto.response.NoticeDetailResponse;
 import com.ilta.solepli.domain.notice.dto.response.NoticePreviewResponse;
 import com.ilta.solepli.domain.notice.service.NoticeService;
 import com.ilta.solepli.global.response.SuccessResponse;
@@ -75,10 +76,10 @@ public class NoticeController {
 
   @Operation(summary = "공지사항 상세 조회 API", description = "공지사항을 상세 조회하는 API입니다.")
   @GetMapping("/{id}")
-  public ResponseEntity<SuccessResponse<List<NoticePreviewResponse>>> getNoticeDetail(
+  public ResponseEntity<SuccessResponse<NoticeDetailResponse>> getNoticeDetail(
       @PathVariable Long id) {
 
-    List<NoticePreviewResponse> response = noticeService.getNotices();
+    NoticeDetailResponse response = noticeService.getNoticeDetail(id);
 
     return ResponseEntity.ok().body(SuccessResponse.successWithData(response));
   }

@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 
 import com.ilta.solepli.domain.notice.dto.request.NoticeCreateRequest;
 import com.ilta.solepli.domain.notice.dto.request.NoticeUpdateRequest;
+import com.ilta.solepli.domain.notice.dto.response.NoticeDetailResponse;
 import com.ilta.solepli.domain.notice.dto.response.NoticePreviewResponse;
 import com.ilta.solepli.domain.notice.entity.Notice;
 import com.ilta.solepli.domain.notice.repository.NoticeRepository;
@@ -53,5 +54,15 @@ public class NoticeService {
     List<Notice> notices = noticeRepository.findAllNotices();
 
     return notices.stream().map(NoticePreviewResponse::from).toList();
+  }
+
+  @Transactional(readOnly = true)
+  public NoticeDetailResponse getNoticeDetail(Long id) {
+    Notice notice =
+        noticeRepository
+            .findById(id)
+            .orElseThrow(() -> new CustomException(ErrorCode.NOTICE_NOT_FOUND));
+
+    return NoticeDetailResponse.from(notice);
   }
 }
