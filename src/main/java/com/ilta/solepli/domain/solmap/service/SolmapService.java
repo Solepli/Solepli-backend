@@ -395,7 +395,7 @@ public class SolmapService {
 
   private Set<Long> getSolmarkedPlaceIds(User user, List<Place> places) {
     // 비로그인이거나 조회된 장소가 없으면 빈 Set 반환
-    if (user == null & places.isEmpty()) {
+    if (user == null | places.isEmpty()) {
       return Collections.emptySet();
     }
 
@@ -588,7 +588,9 @@ public class SolmapService {
   }
 
   @Transactional(readOnly = true)
-  public PlaceDetailSearchResponse getPlaceDetail(Long id) {
+  public PlaceDetailSearchResponse getPlaceDetail(CustomUserDetails customUserDetails, Long id) {
+    User user = SecurityUtil.getUser(customUserDetails);
+
     Place place =
         placeRepository
             .findByPlaceId(id)
@@ -609,9 +611,13 @@ public class SolmapService {
     List<String> thumbnails =
         placeRepository.getReviewThumbnails(place.getId(), MAX_PLACE_THUMBNAIL_LIMIT);
 
+    // 특정 장소의 쏠마크 개수 조회
+    Integer markCnt = solmarkPlaceRepository.countByPlaceAndDeletedAtIsNull(place);
+
     // 장소 상세 정보 DTO 매핑
     PlaceDetail placeDetail =
-        mapToPlaceDetail(place, openStatus, placeTags, recommendationPercent, thumbnails);
+        mapToPlaceDetail(
+            place, openStatus, placeTags, recommendationPercent, thumbnails, user, markCnt);
 
     // 특정 장소 리뷰를 최신순, 최대 INITIAL_REVIEW_LIMIT 조회
     PageRequest pageRequest = PageRequest.of(0, INITIAL_REVIEW_LIMIT);
@@ -651,13 +657,20 @@ public class SolmapService {
       OpenStatus openStatus,
       PlaceTags placeTags,
       Integer recommendationPercent,
-      List<String> thumbnails) {
+      List<String> thumbnails,
+      User user,
+      Integer markCnt) {
+
+    // 특정 장소의 사용자 쏠마크 여부
+    boolean isMarked = isPlaceSolmarkedByUser(user, place);
 
     return PlaceDetail.builder()
         .id(place.getId())
         .name(place.getName())
         .category(getMainCategory(place))
         .detailedCategory(place.getTypes())
+        .isMarked(isMarked)
+        .markCnt(markCnt)
         .latitude(place.getLatitude())
         .longitude(place.getLongitude())
         .isOpen(openStatus.isOpen())
@@ -669,6 +682,11 @@ public class SolmapService {
         .rating(truncateTo2Decimals(place.getRating())) // 소수점 첫째 자리(0.1 단위)까지 절삭, 두번째 자리 이하 버림
         .thumbnailUrl(thumbnails)
         .build();
+  }
+
+  /** 사용자가 특정 장소를 쏠마크(북마크)했는지 판별하는 메서드 */
+  private boolean isPlaceSolmarkedByUser(User user, Place place) {
+    return getSolmarkedPlaceIds(user, List.of(place)).contains(place.getId());
   }
 
   private static Double truncateTo2Decimals(Double num) {

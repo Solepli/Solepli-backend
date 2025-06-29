@@ -144,9 +144,9 @@ public class SolmapController {
   @Operation(summary = "장소 상세정보 조회 API", description = "장소 상세정보 조회 API 입니다.")
   @GetMapping("/place/search/{id}")
   public ResponseEntity<SuccessResponse<PlaceDetailSearchResponse>> getPlaceDetail(
-      @PathVariable Long id) {
+      @AuthenticationPrincipal CustomUserDetails customUserDetails, @PathVariable Long id) {
 
-    PlaceDetailSearchResponse response = solmapService.getPlaceDetail(id);
+    PlaceDetailSearchResponse response = solmapService.getPlaceDetail(customUserDetails, id);
 
     return ResponseEntity.ok().body(SuccessResponse.successWithData(response));
   }
