@@ -81,7 +81,7 @@ public class SecurityConfig {
                         "/api/sollect/recommend",
                         "/api/profile/validate/nickname")
                     .permitAll()
-                    .requestMatchers(HttpMethod.GET, "/api/sollect/*")
+                    .requestMatchers(HttpMethod.GET, "/api/sollect/*", "/api/notice")
                     .permitAll()
                     .anyRequest()
                     .authenticated() // 그 외 요청은 인증 필요

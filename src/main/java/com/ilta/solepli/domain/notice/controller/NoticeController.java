@@ -1,8 +1,11 @@
 package com.ilta.solepli.domain.notice.controller;
 
+import java.util.List;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -17,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 
 import com.ilta.solepli.domain.notice.dto.request.NoticeCreateRequest;
 import com.ilta.solepli.domain.notice.dto.request.NoticeUpdateRequest;
+import com.ilta.solepli.domain.notice.dto.response.NoticePreviewResponse;
 import com.ilta.solepli.domain.notice.service.NoticeService;
 import com.ilta.solepli.global.response.SuccessResponse;
 
@@ -58,5 +62,24 @@ public class NoticeController {
     noticeService.deleteNotice(id);
 
     return ResponseEntity.ok().body(SuccessResponse.successWithNoData("공지사항 삭제 성공"));
+  }
+
+  @Operation(summary = "공지사항 목록 조회 API", description = "공지사항 목록을 조회하는 API입니다.")
+  @GetMapping
+  public ResponseEntity<SuccessResponse<List<NoticePreviewResponse>>> getNotices() {
+
+    List<NoticePreviewResponse> response = noticeService.getNotices();
+
+    return ResponseEntity.ok().body(SuccessResponse.successWithData(response));
+  }
+
+  @Operation(summary = "공지사항 상세 조회 API", description = "공지사항을 상세 조회하는 API입니다.")
+  @GetMapping("/{id}")
+  public ResponseEntity<SuccessResponse<List<NoticePreviewResponse>>> getNoticeDetail(
+      @PathVariable Long id) {
+
+    List<NoticePreviewResponse> response = noticeService.getNotices();
+
+    return ResponseEntity.ok().body(SuccessResponse.successWithData(response));
   }
 }
