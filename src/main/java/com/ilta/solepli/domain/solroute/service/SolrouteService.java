@@ -132,7 +132,7 @@ public class SolrouteService {
             .orElseThrow(() -> new CustomException(ErrorCode.PLACE_NOT_EXISTS));
 
     return PlacePreviewResponse.builder()
-        .placeId(place.getId())
+        .id(place.getId())
         .name(place.getName())
         .detailedCategory(place.getTypes())
         .address(place.getAddress())
