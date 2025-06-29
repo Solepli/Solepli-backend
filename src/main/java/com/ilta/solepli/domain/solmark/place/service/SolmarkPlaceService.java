@@ -79,7 +79,7 @@ public class SolmarkPlaceService {
   }
 
   private CollectionResponse mapToCollectionResponse(SolmarkPlaceCollection spc) {
-    int placeCount = spc.getSolmarkPlaces().size();
+    int placeCount = spc.getSolmarkPlaces().size(); // 저장 리스트의 장소 개수 조회시 삭제 되지 않은것만 조회하도록 수정
 
     return CollectionResponse.builder()
         .collectionId(spc.getId())
