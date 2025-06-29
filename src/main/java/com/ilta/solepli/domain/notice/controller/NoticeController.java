@@ -2,6 +2,7 @@ package com.ilta.solepli.domain.notice.controller;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -47,5 +48,15 @@ public class NoticeController {
     noticeService.updateNotice(request, id);
 
     return ResponseEntity.ok().body(SuccessResponse.successWithNoData("공지사항 수정 성공"));
+  }
+
+  @Operation(summary = "공지사항 삭제 API", description = "공지사항을 삭제하는 API입니다. 관리자만 가능합니다.")
+  @PreAuthorize("hasRole('ADMIN')")
+  @DeleteMapping("/{id}")
+  public ResponseEntity<SuccessResponse<Void>> deleteNotice(@PathVariable Long id) {
+
+    noticeService.deleteNotice(id);
+
+    return ResponseEntity.ok().body(SuccessResponse.successWithNoData("공지사항 삭제 성공"));
   }
 }

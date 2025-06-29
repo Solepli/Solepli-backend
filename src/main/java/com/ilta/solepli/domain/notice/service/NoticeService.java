@@ -34,4 +34,14 @@ public class NoticeService {
 
     notice.update(request);
   }
+
+  @Transactional
+  public void deleteNotice(Long id) {
+    Notice notice =
+        noticeRepository
+            .findById(id)
+            .orElseThrow(() -> new CustomException(ErrorCode.NOTICE_NOT_FOUND));
+
+    notice.softDelete();
+  }
 }
