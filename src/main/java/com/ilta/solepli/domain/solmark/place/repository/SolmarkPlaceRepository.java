@@ -50,4 +50,6 @@ public interface SolmarkPlaceRepository extends JpaRepository<SolmarkPlace, Long
     GROUP BY sp.solmarkPlaceCollection.id
 """)
   List<CollectionCountDto> countByCollectionIds(List<Long> collectionIds);
+
+  Integer countByPlaceAndDeletedAtIsNull(Place place);
 }

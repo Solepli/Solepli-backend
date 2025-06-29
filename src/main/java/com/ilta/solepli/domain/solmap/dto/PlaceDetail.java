@@ -12,6 +12,8 @@ public record PlaceDetail(
     String name,
     String category,
     String detailedCategory,
+    Boolean isMarked,
+    Integer markedCount,
     Double latitude,
     Double longitude,
     Boolean isOpen,
