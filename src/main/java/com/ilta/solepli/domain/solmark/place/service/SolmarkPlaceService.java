@@ -1,6 +1,7 @@
 package com.ilta.solepli.domain.solmark.place.service;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -72,14 +73,29 @@ public class SolmarkPlaceService {
     List<SolmarkPlaceCollection> solmarkPlaceCollections =
         solmarkPlaceCollectionRepository.findByUser(user);
 
+    // 각 저장 리스트 ID 추출
+    List<Long> collecionIds =
+        solmarkPlaceCollections.stream().map(SolmarkPlaceCollection::getId).toList();
+
+    // 컬렉션별 장소 개수(soft delete 제외) 집계 쿼리 실행 및 결과 Map으로 변환
+    List<CollectionCountDto> collectionCountDtos =
+        solmarkPlaceRepository.countByCollectionIds(collecionIds);
+    Map<Long, Long> placeCountMap =
+        collectionCountDtos.stream()
+            .collect(Collectors.toMap(CollectionCountDto::collectionId, CollectionCountDto::count));
+
     return solmarkPlaceCollections.stream()
         // CollectionResponse DTO 매핑
-        .map(this::mapToCollectionResponse)
+        .map(
+            spc -> {
+              // 장소 개수는 placeCountMap에서 꺼내고, 없으면 0
+              long count = placeCountMap.getOrDefault(spc.getId(), 0L);
+              return mapToCollectionResponse(spc, (int) count);
+            })
         .toList();
   }
 
-  private CollectionResponse mapToCollectionResponse(SolmarkPlaceCollection spc) {
-    int placeCount = spc.getSolmarkPlaces().size();
+  private CollectionResponse mapToCollectionResponse(SolmarkPlaceCollection spc, int placeCount) {
 
     return CollectionResponse.builder()
         .collectionId(spc.getId())
