@@ -140,7 +140,7 @@ public class SolrouteService {
   }
 
   @Transactional
-  public String updateSolrouteStatus(Long solrouteId, User user) {
+  public Boolean updateSolrouteStatus(Long solrouteId, User user) {
     Solroute solroute = getSolrouteOrThrow(solrouteId, user);
 
     return solroute.updateStatus();

@@ -6,8 +6,6 @@ import java.util.List;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -54,19 +52,18 @@ public class Solroute extends Timestamped {
   @Builder.Default
   private List<SolroutePlace> solroutePlaces = new ArrayList<>();
 
-  @Enumerated(EnumType.STRING)
   @Column(nullable = false)
   @Builder.Default
-  private SolrouteStatus status = SolrouteStatus.SCHEDULED;
+  private Boolean status = false;
 
   public void addSolroutePlace(SolroutePlace solroutePlace) {
     solroutePlaces.add(solroutePlace);
     solroutePlace.setSolroute(this);
   }
 
-  public String updateStatus() {
-    this.status = this.status.update();
-    return this.status.getDescription();
+  public Boolean updateStatus() {
+    status = !status;
+    return status;
   }
 
   public void updateInfo(Integer iconId, String name) {
