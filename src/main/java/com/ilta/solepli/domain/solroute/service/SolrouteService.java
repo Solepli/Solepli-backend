@@ -165,19 +165,12 @@ public class SolrouteService {
     List<SolroutePlace> solroutePlacesWithPlaceAndPlaceCategoryAndCategory =
         solroutePlaceRepository.findBySolrouteIdWithPlaceAndCategory(solroute.getId());
 
-    List<SolrouteDetailResponse.PlaceCoord> placeCoords =
-        solroutePlacesWithPlaceAndPlaceCategoryAndCategory.stream()
-            .map(SolrouteDetailResponse.PlaceCoord::from)
-            .toList();
-
     return SolrouteDetailResponse.builder()
         .id(solroute.getId())
         .iconId(solroute.getIconId())
         .name(solroute.getName())
-        .placeCount(solroute.getSolroutePlaces().size())
-        .status(solroute.getStatus().getDescription())
+        .status(solroute.getStatus())
         .placeInfos(placeInfos)
-        .placeCoords(placeCoords)
         .build();
   }
 
