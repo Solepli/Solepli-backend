@@ -75,9 +75,9 @@ public class SolrouteController {
   public ResponseEntity<SuccessResponse<Void>> updateSolrouteStatus(
       @AuthenticationPrincipal CustomUserDetails customUserDetails, @PathVariable Long solrotueId) {
 
-    String status = solrouteService.updateSolrouteStatus(solrotueId, customUserDetails.user());
+    Boolean status = solrouteService.updateSolrouteStatus(solrotueId, customUserDetails.user());
     return ResponseEntity.status(200)
-        .body(SuccessResponse.successWithNoData("쏠루트 상태 " + status + "(으)로 변경 완료"));
+        .body(SuccessResponse.successWithNoData("쏠루트 상태 " + status + "로 변경 완료"));
   }
 
   @Operation(summary = "쏠루트 코스 프리뷰 조회 API", description = "쏠루트 코스 프리뷰 리스트를 조회할 때 사용하는 API입니다.")

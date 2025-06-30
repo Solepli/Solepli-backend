@@ -128,7 +128,7 @@ public class SolrouteService {
   public PlacePreviewResponse getPlacePreview(Long placeId) {
     Place place =
         placeRepository
-            .findById(placeId)
+            .findByPlaceId(placeId)
             .orElseThrow(() -> new CustomException(ErrorCode.PLACE_NOT_EXISTS));
 
     return PlacePreviewResponse.builder()
@@ -136,11 +136,14 @@ public class SolrouteService {
         .placeName(place.getName())
         .detailedCategory(place.getTypes())
         .address(place.getAddress())
+        .category(place.getPlaceCategories().get(0).getCategory().getName())
+        .latitude(place.getLatitude())
+        .longitude(place.getLongitude())
         .build();
   }
 
   @Transactional
-  public String updateSolrouteStatus(Long solrouteId, User user) {
+  public Boolean updateSolrouteStatus(Long solrouteId, User user) {
     Solroute solroute = getSolrouteOrThrow(solrouteId, user);
 
     return solroute.updateStatus();
@@ -165,19 +168,12 @@ public class SolrouteService {
     List<SolroutePlace> solroutePlacesWithPlaceAndPlaceCategoryAndCategory =
         solroutePlaceRepository.findBySolrouteIdWithPlaceAndCategory(solroute.getId());
 
-    List<SolrouteDetailResponse.PlaceCoord> placeCoords =
-        solroutePlacesWithPlaceAndPlaceCategoryAndCategory.stream()
-            .map(SolrouteDetailResponse.PlaceCoord::from)
-            .toList();
-
     return SolrouteDetailResponse.builder()
         .id(solroute.getId())
         .iconId(solroute.getIconId())
         .name(solroute.getName())
-        .placeCount(solroute.getSolroutePlaces().size())
-        .status(solroute.getStatus().getDescription())
+        .status(solroute.getStatus())
         .placeInfos(placeInfos)
-        .placeCoords(placeCoords)
         .build();
   }
 
