@@ -107,7 +107,8 @@ public class SecurityConfig {
             "http://localhost:5173",
             "https://" + serverUrl,
             frontEndOrigin)); // 추후 배포 시 변경 필요
-    configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+    configuration.setAllowedMethods(
+        Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
     configuration.setAllowedHeaders(
         Arrays.asList("X-Requested-With", "Content-Type", "Authorization", "X-XSRF-token"));
     configuration.setAllowCredentials(true);
