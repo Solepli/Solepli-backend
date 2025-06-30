@@ -4,4 +4,10 @@ import lombok.Builder;
 
 @Builder
 public record PlacePreviewResponse(
-    Long placeId, String placeName, String detailedCategory, String address) {}
+    Long placeId,
+    String placeName,
+    String detailedCategory,
+    String address,
+    String category,
+    Double latitude,
+    Double longitude) {}

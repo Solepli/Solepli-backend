@@ -128,7 +128,7 @@ public class SolrouteService {
   public PlacePreviewResponse getPlacePreview(Long placeId) {
     Place place =
         placeRepository
-            .findById(placeId)
+            .findByPlaceId(placeId)
             .orElseThrow(() -> new CustomException(ErrorCode.PLACE_NOT_EXISTS));
 
     return PlacePreviewResponse.builder()
@@ -136,6 +136,9 @@ public class SolrouteService {
         .placeName(place.getName())
         .detailedCategory(place.getTypes())
         .address(place.getAddress())
+        .category(place.getPlaceCategories().get(0).getCategory().getName())
+        .latitude(place.getLatitude())
+        .longitude(place.getLongitude())
         .build();
   }
 
