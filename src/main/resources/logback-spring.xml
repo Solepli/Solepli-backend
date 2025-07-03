@@ -21,6 +21,7 @@
 
         <!-- 로그 출력 형식 지정 -->
         <encoder>
+            <charset>UTF-8</charset>
             <pattern>%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n</pattern>
         </encoder>
 
@@ -47,6 +48,7 @@
 
         <!-- 로그 출력 형식 지정 -->
         <encoder>
+            <charset>UTF-8</charset>
             <pattern>%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n</pattern>
         </encoder>
 
@@ -73,6 +75,7 @@
 
         <!-- 로그 출력 형식 지정 -->
         <encoder>
+            <charset>UTF-8</charset>
             <pattern>%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n</pattern>
         </encoder>
 
@@ -86,6 +89,7 @@
 
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
+            <charset>UTF-8</charset>
             <pattern>
                 %clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(%-5level){WARN=yellow, ERROR=red, INFO=cyan, DEBUG=blue, TRACE=green} %clr(${PID:- }){magenta} %clr([%thread]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n%wEx
             </pattern>
