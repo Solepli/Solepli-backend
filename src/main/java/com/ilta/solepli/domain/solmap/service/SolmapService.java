@@ -27,6 +27,7 @@ import com.ilta.solepli.domain.place.entity.QPlaceHour;
 import com.ilta.solepli.domain.place.entity.mapping.PlaceCategory;
 import com.ilta.solepli.domain.place.entity.mapping.QPlaceCategory;
 import com.ilta.solepli.domain.place.repository.PlaceRepository;
+import com.ilta.solepli.domain.review.dto.response.ReviewDetail;
 import com.ilta.solepli.domain.review.entity.QReview;
 import com.ilta.solepli.domain.review.entity.Review;
 import com.ilta.solepli.domain.review.entity.mapping.ReviewImage;
@@ -794,76 +795,5 @@ public class SolmapService {
 
   private BooleanExpression nearby(NumberExpression<Double> distance) {
     return distance.loe(NEARBY_RADIUS_KM_LIMIT);
-  }
-
-  @Transactional(readOnly = true)
-  public ReviewPageResponse getReviewDetails(Long id, Long cursorId, int limit) {
-
-    // 장소(placeId), 리뷰(cursorId) 검증
-    validPlace(id);
-    if (cursorId != null) {
-      validReview(cursorId);
-    }
-
-    // cursorId를 기반으로 리뷰 조회(limit + 1)
-    List<Review> reviews = getReviews(id, cursorId, limit);
-
-    // 조회된 리뷰가 limit + 1 크기일경우 nextCursor 세팅
-    Long nextCursor = null;
-    if (reviews.size() > limit) {
-      reviews.remove(reviews.size() - 1);
-      nextCursor = reviews.get(reviews.size() - 1).getId();
-    }
-
-    // ReviewDetail DTO 매핑
-    List<ReviewDetail> reviewDetails = mapToReviewDetail(reviews);
-
-    return ReviewPageResponse.of(reviewDetails, nextCursor);
-  }
-
-  private void validReview(Long reviewId) {
-    if (!reviewRepository.existsById(reviewId)) {
-      throw new CustomException(ErrorCode.REVIEW_NOT_FOUND);
-    }
-  }
-
-  private void validPlace(Long id) {
-    if (!placeRepository.existsById(id)) {
-      throw new CustomException(ErrorCode.PLACE_NOT_EXISTS);
-    }
-  }
-
-  private List<Review> getReviews(Long placeId, Long cursorId, int limit) {
-
-    List<Long> ids =
-        jpaQueryFactory
-            .select(r.id)
-            .from(r)
-            .where(placeIdEq(placeId).and(reviewIdLT(cursorId)).and(r.deletedAt.isNull()))
-            .orderBy(r.id.desc())
-            .limit(limit + 1)
-            .fetch();
-
-    return jpaQueryFactory
-        .selectFrom(r)
-        .distinct()
-        .leftJoin(r.reviewImages)
-        .fetchJoin()
-        .join(r.user)
-        .fetchJoin()
-        .where(r.id.in(ids))
-        .orderBy(r.id.desc())
-        .fetch();
-  }
-
-  private BooleanExpression placeIdEq(Long placeId) {
-    return p.id.eq(placeId);
-  }
-
-  private BooleanExpression reviewIdLT(Long reviewId) {
-    if (reviewId == null) {
-      return null;
-    }
-    return r.id.lt(reviewId);
   }
 }

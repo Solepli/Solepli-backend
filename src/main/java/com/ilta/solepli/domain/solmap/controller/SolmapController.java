@@ -188,16 +188,4 @@ public class SolmapController {
 
     return ResponseEntity.ok().body(SuccessResponse.successWithData(response));
   }
-
-  @Operation(summary = "리뷰 조회 API", description = "리뷰 조회 API 입니다.")
-  @GetMapping("/place/{id}/reviews")
-  public ResponseEntity<SuccessResponse<ReviewPageResponse>> getReviewDetails(
-      @PathVariable Long id,
-      @RequestParam(required = false) Long cursorId,
-      @RequestParam(required = false, defaultValue = "5") int limit) {
-
-    ReviewPageResponse response = solmapService.getReviewDetails(id, cursorId, limit);
-
-    return ResponseEntity.ok().body(SuccessResponse.successWithData(response));
-  }
 }
