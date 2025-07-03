@@ -3,6 +3,7 @@ package com.ilta.solepli.global.config;
 import java.util.Arrays;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.actuate.autoconfigure.security.servlet.EndpointRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -40,9 +41,6 @@ public class SecurityConfig {
 
   @Value("${frontend.origin}")
   private String frontEndOrigin;
-
-  @Value("${management.server.base-path}")
-  private String actuatorBasePath;
 
   @Bean
   public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -85,11 +83,9 @@ public class SecurityConfig {
                         "/api/profile/validate/nickname")
                     .permitAll()
                     .requestMatchers(
-                        HttpMethod.GET,
-                        "/api/sollect/*",
-                        "/api/notice",
-                        "/api/notice/*",
-                        actuatorBasePath + "/actuator/prometheus")
+                        HttpMethod.GET, "/api/sollect/*", "/api/notice", "/api/notice/*")
+                    .permitAll()
+                    .requestMatchers(EndpointRequest.to("prometheus"))
                     .permitAll()
                     .anyRequest()
                     .authenticated() // 그 외 요청은 인증 필요
