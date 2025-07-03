@@ -1,4 +1,4 @@
-package com.ilta.solepli.domain.solmap.dto;
+package com.ilta.solepli.domain.review.dto.response;
 
 import java.time.LocalDateTime;
 import java.util.List;
