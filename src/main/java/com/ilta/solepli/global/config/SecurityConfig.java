@@ -41,6 +41,9 @@ public class SecurityConfig {
   @Value("${frontend.origin}")
   private String frontEndOrigin;
 
+  @Value("${management.server.base-path}")
+  private String actuatorBasePath;
+
   @Bean
   public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
     return http.csrf(csrf -> csrf.disable()) // JWT 기반 인증이라 CSRF 비활성화
@@ -82,7 +85,11 @@ public class SecurityConfig {
                         "/api/profile/validate/nickname")
                     .permitAll()
                     .requestMatchers(
-                        HttpMethod.GET, "/api/sollect/*", "/api/notice", "/api/notice/*")
+                        HttpMethod.GET,
+                        "/api/sollect/*",
+                        "/api/notice",
+                        "/api/notice/*",
+                        actuatorBasePath + "/actuator/prometheus")
                     .permitAll()
                     .anyRequest()
                     .authenticated() // 그 외 요청은 인증 필요
