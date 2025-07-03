@@ -74,7 +74,7 @@ public class SecurityConfig {
                         "/api/sollect/popular",
                         "/api/sollect/related/*",
                         "/api/solmap/places/nearby",
-                        "/api/solmap/place/*/reviews",
+                        "/api/review/place/*",
                         "/api/place/search",
                         "/api/solroute/place/nearby/*",
                         "/api/solroute/place/*",
