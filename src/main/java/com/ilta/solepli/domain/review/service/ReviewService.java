@@ -117,6 +117,9 @@ public class ReviewService {
       validReview(cursorId);
     }
 
+    // 장소명 조회(이미 검증했으니 get()으로 받아도 무방)
+    String placeName = placeRepository.findById(id).get().getName();
+
     // cursorId를 기반으로 리뷰 조회(limit + 1)
     List<Review> reviews = getReviews(id, cursorId, limit);
 
@@ -130,7 +133,7 @@ public class ReviewService {
     // ReviewDetail DTO 매핑
     List<ReviewDetail> reviewDetails = mapToReviewDetail(reviews);
 
-    return ReviewPageResponse.of(reviewDetails, nextCursor);
+    return ReviewPageResponse.of(placeName, reviewDetails, nextCursor);
   }
 
   private void validReview(Long reviewId) {
