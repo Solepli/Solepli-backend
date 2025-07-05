@@ -52,7 +52,7 @@ public class SolrouteService {
     for (PlaceInfo placeInfo : placeInfos) {
       Place place =
           placeRepository
-              .findById(placeInfo.placeId())
+              .findById(placeInfo.id())
               .orElseThrow(() -> new CustomException(ErrorCode.PLACE_NOT_EXISTS));
 
       SolroutePlace solroutePlace =
