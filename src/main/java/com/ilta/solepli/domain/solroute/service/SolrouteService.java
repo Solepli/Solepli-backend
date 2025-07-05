@@ -160,8 +160,6 @@ public class SolrouteService {
   public SolrouteDetailResponse getSolrouteDeatil(Long solrouteId, User user) {
     Solroute solroute = getSolrouteWithPlacesOrThrow(solrouteId, user);
 
-    //    List<SolroutePlace> solroutePlaces = solroute.getSolroutePlaces();
-
     List<SolroutePlace> solroutePlaces =
         solroutePlaceRepository.findBySolrouteIdWithPlaceAndCategory(solroute.getId());
 
@@ -194,7 +192,7 @@ public class SolrouteService {
       for (SolroutePatchRequest.PlaceInfo placeInfo : placeInfos) {
         Place place =
             placeRepository
-                .findById(placeInfo.placeId())
+                .findById(placeInfo.id())
                 .orElseThrow(() -> new CustomException(ErrorCode.PLACE_NOT_EXISTS));
 
         SolroutePlace solroutePlace =
