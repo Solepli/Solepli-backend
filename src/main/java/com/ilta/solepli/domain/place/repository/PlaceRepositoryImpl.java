@@ -104,8 +104,11 @@ public class PlaceRepositoryImpl implements PlaceRepositoryCustom {
                 PlaceSearchResponse.builder()
                     .id(p.getId())
                     .name(p.getName())
-                    .address(p.getAddress())
                     .category(getMainCategory(p))
+                    .detailedCategory(p.getTypes())
+                    .address(p.getAddress())
+                    .latitude(p.getLatitude())
+                    .longitude(p.getLongitude())
                     .build())
         .toList();
   }
