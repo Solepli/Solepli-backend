@@ -22,7 +22,7 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
                       SELECT r
                       FROM Review r
                       JOIN FETCH r.user u
-                      JOIN FETCH r.reviewImages ri
+                      LEFT JOIN FETCH r.reviewImages ri
                       WHERE r.place.id = :placeId
                       ORDER BY r.createdAt DESC
                   """)
