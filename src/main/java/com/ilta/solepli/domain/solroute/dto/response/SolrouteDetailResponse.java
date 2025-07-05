@@ -11,9 +11,9 @@ public record SolrouteDetailResponse(
     Long id, Integer iconId, String name, Boolean status, List<PlaceInfo> placeInfos) {
   @Builder
   public record PlaceInfo(
-      Long placeId,
+      Long id,
       Integer seq,
-      String placeName,
+      String name,
       String detailedCategory,
       String address,
       String memo,
@@ -22,9 +22,9 @@ public record SolrouteDetailResponse(
       Double longitude) {
     public static PlaceInfo from(SolroutePlace solroutePlace) {
       return PlaceInfo.builder()
-          .placeId(solroutePlace.getPlace().getId())
+          .id(solroutePlace.getPlace().getId())
           .seq(solroutePlace.getSeq())
-          .placeName(solroutePlace.getPlace().getName())
+          .name(solroutePlace.getPlace().getName())
           .detailedCategory(solroutePlace.getPlace().getTypes())
           .address(solroutePlace.getPlace().getAddress())
           .memo(solroutePlace.getMemo())
