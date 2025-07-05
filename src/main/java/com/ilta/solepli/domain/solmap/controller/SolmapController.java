@@ -80,6 +80,7 @@ public class SolmapController {
       description = "지도 화면 내 선택된 카테고리별 장소 리스트 조회 API 입니다.")
   @GetMapping("/places")
   public ResponseEntity<SuccessResponse<PlaceSearchPreviewResponse>> getPlacesPreview(
+      @AuthenticationPrincipal CustomUserDetails customUserDetails,
       @RequestParam Double swLat,
       @RequestParam Double swLng,
       @RequestParam Double neLat,
@@ -93,7 +94,17 @@ public class SolmapController {
 
     PlaceSearchPreviewResponse response =
         solmapService.getPlacesPreview(
-            swLat, swLng, neLat, neLng, userLat, userLng, category, cursorId, cursorDist, limit);
+            swLat,
+            swLng,
+            neLat,
+            neLng,
+            userLat,
+            userLng,
+            category,
+            cursorId,
+            cursorDist,
+            limit,
+            customUserDetails);
 
     return ResponseEntity.ok().body(SuccessResponse.successWithData(response));
   }
@@ -126,6 +137,7 @@ public class SolmapController {
   @Operation(summary = "지역 검색 장소 리스트 조회 API", description = "지역 검색 장소 리스트 조회 API 입니다.")
   @GetMapping("/region/{regionName}/places")
   public ResponseEntity<SuccessResponse<PlaceSearchPreviewResponse>> getPlacesByRegionPreview(
+      @AuthenticationPrincipal CustomUserDetails customUserDetails,
       @PathVariable String regionName,
       @RequestParam Double userLat,
       @RequestParam Double userLng,
@@ -136,7 +148,7 @@ public class SolmapController {
 
     PlaceSearchPreviewResponse response =
         solmapService.getPlacesByRegionPreview(
-            regionName, userLat, userLng, category, cursorId, cursorDist, limit);
+            regionName, userLat, userLng, category, cursorId, cursorDist, limit, customUserDetails);
 
     return ResponseEntity.ok().body(SuccessResponse.successWithData(response));
   }
@@ -164,12 +176,13 @@ public class SolmapController {
   @Operation(summary = "연관 검색어 결과 장소 리스트 조회 API", description = "연관 검색어 결과 장소 리스트 조회 API 입니다.")
   @GetMapping("/places/search/related")
   public ResponseEntity<SuccessResponse<PlaceSearchPreviewResponse>> getPlacePreviewByRelatedSearch(
+      @AuthenticationPrincipal CustomUserDetails customUserDetails,
       @RequestParam List<Long> ids,
       @RequestParam(required = false) Long cursorId,
       @RequestParam(required = false, defaultValue = "5") int limit) {
 
     PlaceSearchPreviewResponse response =
-        solmapService.getPlacePreviewByRelatedSearch(ids, cursorId, limit);
+        solmapService.getPlacePreviewByRelatedSearch(ids, cursorId, limit, customUserDetails);
 
     return ResponseEntity.ok().body(SuccessResponse.successWithData(response));
   }
@@ -177,6 +190,7 @@ public class SolmapController {
   @Operation(summary = "검색결과 없을시 주변 장소 조회 API", description = "검색결과 없을시 주변 장소 조회 API 입니다.")
   @GetMapping("/places/nearby")
   public ResponseEntity<SuccessResponse<PlaceSearchPreviewResponse>> getPlacesPreviewNearby(
+      @AuthenticationPrincipal CustomUserDetails customUserDetails,
       @RequestParam Double userLat,
       @RequestParam Double userLng,
       @RequestParam(required = false) Long cursorId,
@@ -184,7 +198,8 @@ public class SolmapController {
       @RequestParam(required = false, defaultValue = "5") int limit) {
 
     PlaceSearchPreviewResponse response =
-        solmapService.getPlacesPreviewNearby(userLat, userLng, cursorId, cursorDist, limit);
+        solmapService.getPlacesPreviewNearby(
+            userLat, userLng, cursorId, cursorDist, limit, customUserDetails);
 
     return ResponseEntity.ok().body(SuccessResponse.successWithData(response));
   }
