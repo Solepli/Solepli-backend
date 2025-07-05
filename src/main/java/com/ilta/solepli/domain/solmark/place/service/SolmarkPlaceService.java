@@ -129,14 +129,22 @@ public class SolmarkPlaceService {
     Integer recommendationPercent = placeRepository.getRecommendationPercent(placeId);
     List<String> tags = placeRepository.getTopTagsForPlace(placeId, TAG_LIMIT);
     Double rating = PlaceUtil.truncateTo2Decimals(sp.getPlace().getRating());
+    String category = sp.getPlace().getPlaceCategories().get(0).getCategory().getName();
+    String address = sp.getPlace().getAddress();
+    Double latitude = sp.getPlace().getLatitude();
+    Double longitude = sp.getPlace().getLongitude();
 
     return SolmarkPlaceDto.builder()
-        .PlaceId(placeId)
+        .id(placeId)
         .name(name)
         .detailedCategory(detailedCategory)
         .recommendationPercent(recommendationPercent)
         .tags(tags)
         .rating(rating)
+        .category(category)
+        .address(address)
+        .latitude(latitude)
+        .longitude(longitude)
         .build();
   }
 
