@@ -15,7 +15,7 @@ public record SolrouteCreateRequest(
         @Valid
         List<PlaceInfo> placeInfos) {
   public record PlaceInfo(
-      @NotNull(message = "장소 ID는 필수입니다.") Long placeId,
+      @NotNull(message = "장소 ID는 필수입니다.") Long id,
       @NotNull(message = "순서는 필수입니다.") Integer seq,
       @Size(max = 100, message = "메모는 최대 100자까지 입력할 수 있습니다.") String memo) {}
 }
