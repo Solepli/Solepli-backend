@@ -34,6 +34,8 @@ public interface SolmarkPlaceRepository extends JpaRepository<SolmarkPlace, Long
     FROM SolmarkPlace sp
     JOIN sp.solmarkPlaceCollection spc
     JOIN FETCH sp.place p
+    JOIN FETCH p.placeCategories pc
+    JOIN FETCH pc.category c
     WHERE spc.deletedAt IS NULL
     AND sp.deletedAt IS NULL
     AND spc.user = :user

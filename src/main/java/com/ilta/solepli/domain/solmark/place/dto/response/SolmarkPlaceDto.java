@@ -6,9 +6,13 @@ import lombok.Builder;
 
 @Builder
 public record SolmarkPlaceDto(
-    Long PlaceId,
+    Long id,
     String name,
     String detailedCategory,
     Integer recommendationPercent,
     List<String> tags,
-    Double rating) {}
+    Double rating,
+    String category,
+    String address,
+    Double latitude,
+    Double longitude) {}
