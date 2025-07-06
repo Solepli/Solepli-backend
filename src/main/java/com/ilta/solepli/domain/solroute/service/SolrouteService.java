@@ -212,7 +212,8 @@ public class SolrouteService {
   public void deleteSolroute(Long solrouteId, User user) {
     Solroute solroute = getSolrouteOrThrow(solrouteId, user);
 
-    solroute.softDelete();
+    //    solroute.softDelete();
+    solrouteRepository.delete(solroute);
   }
 
   private Set<Long> getSolmarkedPlaceIds(User user, List<Place> places) {
