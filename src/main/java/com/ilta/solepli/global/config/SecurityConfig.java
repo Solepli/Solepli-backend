@@ -42,6 +42,15 @@ public class SecurityConfig {
   @Value("${frontend.origin}")
   private String frontEndOrigin;
 
+  @Value("${KAKAO_REDIRECT_URI}")
+  private String kakaoRedirectUri;
+
+  @Value("${NAVER_REDIRECT_URI}")
+  private String naverRedirectUri;
+
+  @Value("${GOOGLE_REDIRECT_URI}")
+  private String googleRedirectUri;
+
   @Bean
   public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
     return http.csrf(csrf -> csrf.disable()) // JWT 기반 인증이라 CSRF 비활성화
@@ -60,7 +69,10 @@ public class SecurityConfig {
                         "/api-docs",
                         "/api-docs/**",
                         "/v3/api-docs/**",
-                        "/health/**")
+                        "/health/**",
+                        "/kakao/callback",
+                        "/naver/callback",
+                        "/google/callback")
                     .permitAll()
                     .requestMatchers(
                         "/api/auth/**",
