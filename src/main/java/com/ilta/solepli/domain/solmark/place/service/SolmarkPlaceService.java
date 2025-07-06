@@ -22,7 +22,6 @@ import com.ilta.solepli.domain.solmark.place.repository.SolmarkPlaceCollectionRe
 import com.ilta.solepli.domain.solmark.place.repository.SolmarkPlaceRepository;
 import com.ilta.solepli.domain.user.entity.User;
 import com.ilta.solepli.domain.user.util.CustomUserDetails;
-import com.ilta.solepli.global.entity.Timestamped;
 import com.ilta.solepli.global.exception.CustomException;
 import com.ilta.solepli.global.exception.ErrorCode;
 import com.ilta.solepli.global.util.PlaceUtil;
@@ -174,10 +173,12 @@ public class SolmarkPlaceService {
     User user = customUserDetails.user();
 
     // 쏠마크 저장 리스트 삭제
-    solmarkPlaceCollectionRepository
-        .findByIdAndUser(collectionId, user)
-        .orElseThrow(() -> new CustomException(ErrorCode.COLLECTION_NOT_FOUND))
-        .softDelete(); // delete 시점 기록
+    SolmarkPlaceCollection solmarkPlaceCollection =
+        solmarkPlaceCollectionRepository
+            .findByIdAndUser(collectionId, user)
+            .orElseThrow(() -> new CustomException(ErrorCode.COLLECTION_NOT_FOUND));
+    //        .softDelete(); // delete 시점 기록
+    solmarkPlaceCollectionRepository.delete(solmarkPlaceCollection);
   }
 
   @Transactional
@@ -211,12 +212,12 @@ public class SolmarkPlaceService {
 
     // 쏠마크 장소 추가
     addSolmarkPlace(user, toAdd, place);
-    // 쏠마크 장소 삭제(softDelete)
-    softDeleteSolmarkPlace(user, toRemove, place);
+    // 쏠마크 장소 삭제(hardDelete)
+    hardDeleteSolmarkPlace(user, toRemove, place);
   }
 
-  /** 지정한 저장 리스트에서 해당 장소에 대한 쏠마크를 soft-delete 처리 */
-  private void softDeleteSolmarkPlace(User user, List<Long> toRemove, Place place) {
+  /** 지정한 저장 리스트에서 해당 장소에 대한 쏠마크를 hard-delete 처리 */
+  private void hardDeleteSolmarkPlace(User user, List<Long> toRemove, Place place) {
     if (toRemove.isEmpty()) return;
     List<SolmarkPlaceCollection> removeCollections =
         solmarkPlaceCollectionRepository.findByUserAndIdInAndDeletedAtIsNullWithPlaces(
@@ -226,7 +227,7 @@ public class SolmarkPlaceService {
         c -> {
           c.getSolmarkPlaces().stream()
               .filter(sp -> sp.getPlace().equals(place) && sp.getDeletedAt() == null)
-              .forEach(Timestamped::softDelete);
+              .forEach(solmarkPlaceRepository::delete);
         });
   }
 

@@ -252,10 +252,10 @@ public class SollectService {
     }
 
     // 추후에 S3 용량 문제 발생시 다시 활성화
-    // deleteS3Images(sollect.getSollectContents());
+    deleteS3Images(sollect.getSollectContents());
 
-    sollect.softDelete();
-    // sollectRepository.delete(sollect);
+    // sollect.softDelete();
+    sollectRepository.delete(sollect);
   }
 
   /**
