@@ -548,7 +548,7 @@ public class SollectService {
 
       SollectDetailResponse.PlaceSummary placeSummary =
           SollectDetailResponse.PlaceSummary.builder()
-              .placeId(place.getId())
+              .id(place.getId())
               .name(place.getName())
               .detailedCategory(place.getTypes())
               .recommendationPercent(recommendationPercent)
