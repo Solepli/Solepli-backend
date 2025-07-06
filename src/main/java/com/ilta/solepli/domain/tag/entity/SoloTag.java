@@ -17,7 +17,7 @@ public enum SoloTag {
   GOOD_FOR_DAY("낮에 가기 좋은"),
   GOOD_FOR_NIGHT("밤에 가기 좋은"),
   SPACIOUS("넓은"),
-  SMALL("작은");
+  SMALL("좁은");
 
   private final String description;
 
