@@ -46,7 +46,8 @@ public class NoticeService {
             .findById(id)
             .orElseThrow(() -> new CustomException(ErrorCode.NOTICE_NOT_FOUND));
 
-    notice.softDelete();
+    //    notice.softDelete();
+    noticeRepository.delete(notice);
   }
 
   @Transactional(readOnly = true)
