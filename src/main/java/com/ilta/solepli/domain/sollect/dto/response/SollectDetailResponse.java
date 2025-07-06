@@ -30,7 +30,7 @@ public record SollectDetailResponse(
 
   @Builder
   public record PlaceSummary(
-      Long placeId,
+      Long id,
       String name,
       String detailedCategory,
       Integer recommendationPercent,
