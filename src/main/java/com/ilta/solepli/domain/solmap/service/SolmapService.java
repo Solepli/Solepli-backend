@@ -214,7 +214,8 @@ public class SolmapService {
       String category,
       Long cursorId,
       Double cursorDist,
-      int limit) {
+      int limit,
+      CustomUserDetails customUserDetails) {
 
     // 좌표, 카테고리 유효성 검증
     validViewport(swLat, swLng, neLat, neLng);
@@ -225,11 +226,16 @@ public class SolmapService {
         getPlacesByViewPort(
             swLat, swLng, neLat, neLng, userLat, userLng, category, cursorId, cursorDist, limit);
 
+    // 사용자가 쏠마크한 장소 ID Set 추출
+    User user = SecurityUtil.getUser(customUserDetails);
+    Set<Long> solmarkedPlaceIds = getSolmarkedPlaceIds(user, places);
+
     // 다음 페이지 커서 값 세팅 (limit+1번째 데이터가 존재할 경우에만)
     CursorInfo next = setNextCursor(places, userLat, userLng, limit);
 
     // PreviewDetail DTO 매핑
-    List<PlacePreviewDetail> placePreviewDetails = mapToPreviewDetails(places, limit);
+    List<PlacePreviewDetail> placePreviewDetails =
+        mapToPreviewDetails(places, limit, solmarkedPlaceIds);
 
     return PlaceSearchPreviewResponse.builder()
         .places(placePreviewDetails)
@@ -483,7 +489,8 @@ public class SolmapService {
       String category,
       Long cursorId,
       Double cursorDist,
-      int limit) {
+      int limit,
+      CustomUserDetails customUserDetails) {
 
     // 카테고리, 지역명 유효성 검증
     validCategory(category);
@@ -494,11 +501,16 @@ public class SolmapService {
         fetchPlacesByRegionAndCursor(
             userLat, userLng, regionName, category, cursorId, cursorDist, limit);
 
+    // 사용자가 쏠마크한 장소 ID Set 추출
+    User user = SecurityUtil.getUser(customUserDetails);
+    Set<Long> solmarkedPlaceIds = getSolmarkedPlaceIds(user, fetched);
+
     // 다음 페이지 커서 값 세팅 (limit+1번째 데이터가 존재할 경우에만)
     CursorInfo next = setNextCursor(fetched, userLat, userLng, limit);
 
     // 조회된 장소 중 limit개만 PlacePreviewDetail DTO 매핑
-    List<PlacePreviewDetail> placePreviewDetails = mapToPreviewDetails(fetched, limit);
+    List<PlacePreviewDetail> placePreviewDetails =
+        mapToPreviewDetails(fetched, limit, solmarkedPlaceIds);
 
     return PlaceSearchPreviewResponse.builder()
         .places(placePreviewDetails)
@@ -549,7 +561,8 @@ public class SolmapService {
     return CursorInfo.of(nextCursor, nextCursorDist);
   }
 
-  private List<PlacePreviewDetail> mapToPreviewDetails(List<Place> fetched, int limit) {
+  private List<PlacePreviewDetail> mapToPreviewDetails(
+      List<Place> fetched, int limit, Set<Long> solmarkedPlaceIds) {
 
     return fetched.stream()
         .limit(limit) // limit개만 결과로 반환
@@ -562,6 +575,7 @@ public class SolmapService {
               OpenStatus openStatus = getOpenStatus(p);
               Integer isSoloRecommendedPercent =
                   placeRepository.getRecommendationPercent(p.getId());
+              boolean isMarked = solmarkedPlaceIds.contains(p.getId());
 
               return PlacePreviewDetail.builder()
                   .id(p.getId())
@@ -572,6 +586,7 @@ public class SolmapService {
                   .rating(truncateTo2Decimals(p.getRating()))
                   .isOpen(openStatus.isOpen())
                   .closingTime(openStatus.closingTime())
+                  .isMarked(isMarked)
                   .thumbnailUrls(reviewThumbnails)
                   .build();
             })
@@ -726,7 +741,7 @@ public class SolmapService {
 
   @Transactional(readOnly = true)
   public PlaceSearchPreviewResponse getPlacePreviewByRelatedSearch(
-      List<Long> ids, Long cursorId, int limit) {
+      List<Long> ids, Long cursorId, int limit, CustomUserDetails customUserDetails) {
 
     // 커서 기준으로 시작 인덱스 계산 (없으면 0)
     int startIdx = 0;
@@ -746,13 +761,18 @@ public class SolmapService {
     // placeId로 Place 조회 (순서 보장 X)
     List<Place> places = placeRepository.findByPlace_IdIn(placeIds);
 
+    // 사용자가 쏠마크한 장소 ID Set 추출
+    User user = SecurityUtil.getUser(customUserDetails);
+    Set<Long> solmarkedPlaceIds = getSolmarkedPlaceIds(user, places);
+
     // 조회 결과를 placeIds 순서대로 정렬
     Map<Long, Place> placeMap =
         places.stream().collect(Collectors.toMap(Place::getId, Function.identity()));
     List<Place> orderedPlaces = placeIds.stream().map(placeMap::get).toList();
 
     // PlacePreviewDetail DTO로 매핑
-    List<PlacePreviewDetail> placePreviewDetails = mapToPreviewDetails(orderedPlaces, limit);
+    List<PlacePreviewDetail> placePreviewDetails =
+        mapToPreviewDetails(orderedPlaces, limit, solmarkedPlaceIds);
 
     // 더 불러올 데이터가 있으면 다음 커서 id, 없으면 null
     Long nextCursor = (endIdx < ids.size()) ? ids.get(endIdx - 1) : null;
@@ -765,13 +785,24 @@ public class SolmapService {
 
   @Transactional(readOnly = true)
   public PlaceSearchPreviewResponse getPlacesPreviewNearby(
-      Double userLat, Double userLng, Long cursorId, Double cursorDist, int limit) {
+      Double userLat,
+      Double userLng,
+      Long cursorId,
+      Double cursorDist,
+      int limit,
+      CustomUserDetails customUserDetails) {
     // 반경 km 이내의 장소 조회
     List<Place> places = getPlacesNearby(userLat, userLng, cursorId, cursorDist, limit);
+
+    // 사용자가 쏠마크한 장소 ID Set 추출
+    User user = SecurityUtil.getUser(customUserDetails);
+    Set<Long> solmarkedPlaceIds = getSolmarkedPlaceIds(user, places);
+
     // 커서 정보 세팅
     CursorInfo next = setNextCursor(places, userLat, userLng, limit);
     // PlacePreviewDetail DTO 매핑
-    List<PlacePreviewDetail> placePreviewDetails = mapToPreviewDetails(places, limit);
+    List<PlacePreviewDetail> placePreviewDetails =
+        mapToPreviewDetails(places, limit, solmarkedPlaceIds);
 
     return PlaceSearchPreviewResponse.builder()
         .places(placePreviewDetails)

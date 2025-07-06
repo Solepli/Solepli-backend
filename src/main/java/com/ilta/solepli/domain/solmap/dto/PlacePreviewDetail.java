@@ -16,4 +16,5 @@ public record PlacePreviewDetail(
     Double rating,
     Boolean isOpen,
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm") LocalTime closingTime,
+    Boolean isMarked,
     List<String> thumbnailUrls) {}
