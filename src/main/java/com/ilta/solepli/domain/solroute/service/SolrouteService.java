@@ -65,7 +65,7 @@ public class SolrouteService {
   }
 
   @Transactional(readOnly = true)
-  public List<PlaceSummaryResponse> findNearbyPopularPlace(User user, Long placeId) {
+  public List<PlaceSummaryResponse> findNearbyPopularPlace(Long placeId) {
     Place place =
         placeRepository
             .findById(placeId)
@@ -101,20 +101,22 @@ public class SolrouteService {
             .toList();
 
     List<PlaceSummaryResponse> response = new ArrayList<>();
-    Set<Long> markedSet = getSolmarkedPlaceIds(user, result);
 
     for (Place p : result) {
       List<String> tags = placeRepository.getTopTagsForPlace(p.getId(), 3);
       Integer recommendationPercent = placeRepository.getRecommendationPercent(p.getId());
-      boolean isMarked = markedSet.contains(p.getId());
 
       PlaceSummaryResponse placeSummaryResponse =
           PlaceSummaryResponse.builder()
+              .id(p.getId())
               .name(p.getName())
               .detailedCategory(p.getTypes())
+              .category(p.getPlaceCategories().get(0).getCategory().getName()) // 추후 성능 이슈 발생시 리팩토링
+              .address(p.getAddress())
+              .latitude(p.getLatitude())
+              .longitude(p.getLongitude())
               .recommendationPercent(recommendationPercent)
               .tags(tags)
-              .isMarked(isMarked)
               .rating(PlaceUtil.truncateTo2Decimals(p.getRating()))
               .build();
 

@@ -6,9 +6,13 @@ import lombok.Builder;
 
 @Builder
 public record PlaceSummaryResponse(
+    Long id,
     String name,
     String detailedCategory,
+    String category,
+    String address,
+    Double latitude,
+    Double longitude,
     Integer recommendationPercent,
     List<String> tags,
-    Boolean isMarked,
     Double rating) {}
