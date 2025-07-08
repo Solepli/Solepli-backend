@@ -52,8 +52,7 @@ public class SolrouteController {
   public ResponseEntity<SuccessResponse<List<PlaceSummaryResponse>>> findNearbyPopularPlace(
       @AuthenticationPrincipal CustomUserDetails customUserDetails, @PathVariable Long placeId) {
 
-    List<PlaceSummaryResponse> nearbyPopularPlace =
-        solrouteService.findNearbyPopularPlace(customUserDetails.user(), placeId);
+    List<PlaceSummaryResponse> nearbyPopularPlace = solrouteService.findNearbyPopularPlace(placeId);
 
     return ResponseEntity.ok(SuccessResponse.successWithData(nearbyPopularPlace));
   }
