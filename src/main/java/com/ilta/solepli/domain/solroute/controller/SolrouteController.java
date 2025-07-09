@@ -103,7 +103,7 @@ public class SolrouteController {
   @PatchMapping({"/{solrotueId}"})
   public ResponseEntity<SuccessResponse<Void>> patchSolroute(
       @AuthenticationPrincipal CustomUserDetails customUserDetails,
-      @RequestBody SolroutePatchRequest request,
+      @Valid @RequestBody SolroutePatchRequest request,
       @PathVariable Long solrotueId) {
 
     solrouteService.patchSolroute(request, solrotueId, customUserDetails.user());
