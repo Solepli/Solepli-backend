@@ -1,5 +1,6 @@
 package com.ilta.solepli.domain.place.repository;
 
+import com.ilta.solepli.domain.place.dto.response.PlaceSearchResponseDTO;
 import java.util.List;
 import java.util.Objects;
 
@@ -89,7 +90,7 @@ public class PlaceRepositoryImpl implements PlaceRepositoryCustom {
   }
 
   @Override
-  public List<PlaceSearchResponse> getPlacesByKeyword(String keyword) {
+  public List<PlaceSearchResponseDTO> getPlacesByKeyword(String keyword) {
     return jpaQueryFactory
         .select(p)
         .from(p)
