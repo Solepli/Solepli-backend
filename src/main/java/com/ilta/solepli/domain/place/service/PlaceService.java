@@ -2,9 +2,12 @@ package com.ilta.solepli.domain.place.service;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -19,7 +22,10 @@ import lombok.RequiredArgsConstructor;
 
 import com.ilta.solepli.domain.place.dto.reqeust.RequestAddPlaceRequest;
 import com.ilta.solepli.domain.place.dto.response.PlaceSearchResponse;
+import com.ilta.solepli.domain.place.dto.response.PlaceSearchResponseDTO;
 import com.ilta.solepli.domain.place.repository.PlaceRepository;
+import com.ilta.solepli.domain.solmark.place.entity.SolmarkPlace;
+import com.ilta.solepli.domain.solmark.place.repository.SolmarkPlaceRepository;
 import com.ilta.solepli.domain.user.entity.User;
 import com.ilta.solepli.domain.user.util.CustomUserDetails;
 import com.ilta.solepli.global.exception.CustomException;
@@ -39,10 +45,21 @@ public class PlaceService {
 
   private final PlaceRepository placeRepository;
   private final JavaMailSender javaMailSender;
+  private final SolmarkPlaceRepository solmarkPlaceRepository;
 
   @Transactional(readOnly = true)
-  public List<PlaceSearchResponse> getSearchPlaces(String keyword) {
-    return placeRepository.getPlacesByKeyword(keyword);
+  public List<PlaceSearchResponse> getSearchPlaces(User user, String keyword) {
+    List<PlaceSearchResponseDTO> responseDTOList = placeRepository.getPlacesByKeyword(keyword);
+    List<Long> placeIds = responseDTOList.stream().map(dto -> dto.id()).toList();
+
+    Set<Long> solmarkedPlaceIds = getSolmarkedPlaceIds(user, placeIds);
+
+    List<PlaceSearchResponse> response = new ArrayList<>();
+    for (PlaceSearchResponseDTO dto : responseDTOList) {
+      PlaceSearchResponse p = PlaceSearchResponse.from(dto, solmarkedPlaceIds.contains(dto.id()));
+      response.add(p);
+    }
+    return response;
   }
 
   public void requestAddPlace(CustomUserDetails customUserDetails, RequestAddPlaceRequest req) {
@@ -103,5 +120,19 @@ public class PlaceService {
         .map(categoryMap::get)
         .filter(Objects::nonNull) // 혹시 없는 값은 제외
         .collect(Collectors.joining(", "));
+  }
+
+  private Set<Long> getSolmarkedPlaceIds(User user, List<Long> placeIds) {
+    // 비로그인이거나 조회된 장소가 없으면 빈 Set 반환
+    if (user == null | placeIds.isEmpty()) {
+      return Collections.emptySet();
+    }
+
+    // 쏠마크 장소 조회
+    List<SolmarkPlace> solmarkPlaces =
+        solmarkPlaceRepository.findAllNonDeletedByUserAndPlaceIds(user, placeIds);
+
+    // 쏠마크 장소 ID Set 반환
+    return solmarkPlaces.stream().map(sp -> sp.getPlace().getId()).collect(Collectors.toSet());
   }
 }
