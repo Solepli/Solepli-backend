@@ -6,7 +6,7 @@ public record Distance(Number value, String unit) {
       return new Distance(Math.round(meter), "m");
     } else {
       double km = meter / 1000.0;
-      double roundedKm = Math.round(km * 100.0) / 100.0;
+      double roundedKm = Math.round(km * 10.0) / 10.0;
       return new Distance(roundedKm, "km");
     }
   }

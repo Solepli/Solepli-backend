@@ -6,6 +6,8 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -38,6 +40,8 @@ public class SolmarkPlaceService {
   private static final int MAX_PLACES_PER_COLLECTION = 100;
   private static final int MAX_COLLECTIONS_PER_USER = 50;
   private static final int TAG_LIMIT = 3;
+
+  @PersistenceContext private EntityManager entityManager;
 
   @Transactional
   public void createCollection(
@@ -225,9 +229,7 @@ public class SolmarkPlaceService {
 
     removeCollections.forEach(
         c -> {
-          c.getSolmarkPlaces().stream()
-              .filter(sp -> sp.getPlace().equals(place) && sp.getDeletedAt() == null)
-              .forEach(solmarkPlaceRepository::delete);
+          c.getSolmarkPlaces().removeIf(sp -> sp.getPlace().equals(place));
         });
   }
 
