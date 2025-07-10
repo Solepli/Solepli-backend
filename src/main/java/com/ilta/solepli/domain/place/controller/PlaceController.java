@@ -14,8 +14,10 @@ import lombok.RequiredArgsConstructor;
 import com.ilta.solepli.domain.place.dto.reqeust.RequestAddPlaceRequest;
 import com.ilta.solepli.domain.place.dto.response.PlaceSearchResponse;
 import com.ilta.solepli.domain.place.service.PlaceService;
+import com.ilta.solepli.domain.user.entity.User;
 import com.ilta.solepli.domain.user.util.CustomUserDetails;
 import com.ilta.solepli.global.response.SuccessResponse;
+import com.ilta.solepli.global.util.SecurityUtil;
 
 @RestController
 @RequiredArgsConstructor
@@ -28,9 +30,11 @@ public class PlaceController {
   @Operation(summary = "장소 검색 API", description = "장소 추가 화면에서 사용되는 검색 API입니다.")
   @GetMapping("/search")
   public ResponseEntity<SuccessResponse<List<PlaceSearchResponse>>> searchPlaces(
+      @AuthenticationPrincipal CustomUserDetails customUserDetails,
       @RequestParam(required = true) String keyword) {
 
-    List<PlaceSearchResponse> searchContents = placeService.getSearchPlaces(keyword);
+    User user = SecurityUtil.getUser(customUserDetails);
+    List<PlaceSearchResponse> searchContents = placeService.getSearchPlaces(user, keyword);
 
     return ResponseEntity.ok(SuccessResponse.successWithData(searchContents));
   }

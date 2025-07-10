@@ -10,4 +10,17 @@ public record PlaceSearchResponse(
     String detailedCategory,
     String address,
     Double latitude,
-    Double longitude) {}
+    Double longitude,
+    Boolean isMarked) {
+  public static PlaceSearchResponse from(PlaceSearchResponseDTO dto, Boolean isMarked) {
+    return new PlaceSearchResponse(
+        dto.id(),
+        dto.name(),
+        dto.category(),
+        dto.detailedCategory(),
+        dto.address(),
+        dto.latitude(),
+        dto.longitude(),
+        isMarked);
+  }
+}

@@ -7,7 +7,7 @@ import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 
 import com.ilta.solepli.domain.category.entity.QCategory;
-import com.ilta.solepli.domain.place.dto.response.PlaceSearchResponse;
+import com.ilta.solepli.domain.place.dto.response.PlaceSearchResponseDTO;
 import com.ilta.solepli.domain.place.entity.Place;
 import com.ilta.solepli.domain.place.entity.QPlace;
 import com.ilta.solepli.domain.place.entity.mapping.QPlaceCategory;
@@ -89,7 +89,7 @@ public class PlaceRepositoryImpl implements PlaceRepositoryCustom {
   }
 
   @Override
-  public List<PlaceSearchResponse> getPlacesByKeyword(String keyword) {
+  public List<PlaceSearchResponseDTO> getPlacesByKeyword(String keyword) {
     return jpaQueryFactory
         .select(p)
         .from(p)
@@ -101,7 +101,7 @@ public class PlaceRepositoryImpl implements PlaceRepositoryCustom {
         .stream()
         .map(
             p ->
-                PlaceSearchResponse.builder()
+                PlaceSearchResponseDTO.builder()
                     .id(p.getId())
                     .name(p.getName())
                     .category(getMainCategory(p))
