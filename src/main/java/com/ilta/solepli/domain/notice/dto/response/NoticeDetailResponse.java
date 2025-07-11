@@ -13,6 +13,6 @@ public record NoticeDetailResponse(
     String content) {
   public static NoticeDetailResponse from(Notice notice) {
     return new NoticeDetailResponse(
-        notice.getId(), notice.getTitle(), notice.getCreatedAt(), notice.getTitle());
+        notice.getId(), notice.getTitle(), notice.getCreatedAt(), notice.getContent());
   }
 }
