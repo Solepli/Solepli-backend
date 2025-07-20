@@ -16,23 +16,40 @@ import com.ilta.solepli.domain.user.entity.User;
 public class JwtTokenProvider {
 
   private final Key key;
-  private final long expiration;
+  private final long accessTokenExpiration;
+  private final long refreshTokenExpiration;
 
   public JwtTokenProvider(
       @Value("${spring.jwt.secret}") String secretKey,
-      @Value("${spring.jwt.access.token.expiration}") long expiration) {
+      @Value("${spring.jwt.access.token.expiration}") long accessTokenExpiration,
+      @Value("${spring.jwt.refresh.token.expiration}") long refreshTokenExpiration) {
     this.key = Keys.hmacShaKeyFor(secretKey.getBytes());
-    this.expiration = expiration;
+    this.accessTokenExpiration = accessTokenExpiration;
+    this.refreshTokenExpiration = refreshTokenExpiration;
   }
 
-  public String generateToken(User user) {
+  /** Access Token 생성 (사용자 인증용, 짧은 유효기간) */
+  public String generateAccessToken(User user) {
     // 토큰 생성 (loginId + role 포함)
     Date now = new Date();
-    Date expiry = new Date(now.getTime() + expiration);
+    Date expiry = new Date(now.getTime() + accessTokenExpiration);
 
     return Jwts.builder()
         .setSubject(user.getLoginId())
         .claim("role", user.getRole().name())
+        .setIssuedAt(now)
+        .setExpiration(expiry)
+        .signWith(key, SignatureAlgorithm.HS256)
+        .compact();
+  }
+
+  /** Refresh Token 생성 (Access Token 재발급용, claim 없음) */
+  public String generateRefreshToken(User user) {
+    Date now = new Date();
+    Date expiry = new Date(now.getTime() + refreshTokenExpiration);
+
+    return Jwts.builder()
+        .setSubject(user.getLoginId())
         .setIssuedAt(now)
         .setExpiration(expiry)
         .signWith(key, SignatureAlgorithm.HS256)
