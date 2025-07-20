@@ -1,10 +1,14 @@
 package com.ilta.solepli.domain.auth.service;
 
+import java.time.Duration;
+
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 
 import com.ilta.solepli.domain.auth.dto.request.BasicLoginRequest;
@@ -31,9 +35,15 @@ public class AuthService {
   private final PasswordEncoder passwordEncoder;
   private final JwtTokenProvider jwtTokenProvider;
   private final SolmarkPlaceCollectionRepository solmarkPlaceCollectionRepository;
+  private final RedisTemplate<String, String> redisTemplate;
 
   @Value("${DEFAULT_PROFILE_URL}")
   private String defaultImageUrl;
+
+  @Value("${spring.jwt.refresh.token.expiration}")
+  private long refreshTokenExpiration;
+
+  private static final String REFRESH_PREFIX = "refresh:";
 
   @Transactional
   public void signup(BasicLoginRequest request) {
@@ -61,7 +71,7 @@ public class AuthService {
   }
 
   @Transactional(readOnly = true)
-  public LoginResponse login(BasicLoginRequest request) {
+  public LoginResponse login(BasicLoginRequest request, HttpServletResponse response) {
     User user =
         userRepository
             .findByLoginId(request.loginId())
@@ -71,13 +81,25 @@ public class AuthService {
       throw new CustomException(ErrorCode.INCORRECT_ACCOUNT);
     }
 
-    String accessToken = jwtTokenProvider.generateToken(user);
+    String accessToken = jwtTokenProvider.generateAccessToken(user);
+    String refreshToken = jwtTokenProvider.generateRefreshToken(user);
+
+    // Redis에 Refresh Token 저장
+    redisTemplate
+        .opsForValue()
+        .set(
+            REFRESH_PREFIX + user.getLoginId(),
+            refreshToken,
+            Duration.ofMillis(refreshTokenExpiration));
+
+    // 쿠키로 Refresh Token 전달
+    addRefreshTokenToCookie(response, refreshToken);
 
     return LoginResponse.from(user.getId(), accessToken, user.getRole());
   }
 
   @Transactional
-  public LoginResponse socialLogin(String code, String input) {
+  public LoginResponse socialLogin(String code, String input, HttpServletResponse response) {
     LoginType loginType;
     try {
       loginType = LoginType.valueOf(input);
@@ -89,10 +111,30 @@ public class AuthService {
 
     String loginId = oauthService.getLoginId(oauthService.getAccessToken(code));
 
-    User findUser = userService.findOrSignUpUser(loginId, loginType);
+    User user = userService.findOrSignUpUser(loginId, loginType);
 
-    String accessToken = jwtTokenProvider.generateToken(findUser);
+    String accessToken = jwtTokenProvider.generateAccessToken(user);
+    String refreshToken = jwtTokenProvider.generateRefreshToken(user);
 
-    return LoginResponse.from(findUser.getId(), accessToken, findUser.getRole());
+    // Redis에 Refresh Token 저장
+    redisTemplate
+        .opsForValue()
+        .set(
+            REFRESH_PREFIX + user.getLoginId(),
+            refreshToken,
+            Duration.ofMillis(refreshTokenExpiration));
+
+    // 쿠키로 Refresh Token 전달
+    addRefreshTokenToCookie(response, refreshToken);
+
+    return LoginResponse.from(user.getId(), accessToken, user.getRole());
+  }
+
+  private void addRefreshTokenToCookie(HttpServletResponse response, String refreshToken) {
+    String cookie =
+        String.format(
+            "refreshToken=%s; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=%d",
+            refreshToken, refreshTokenExpiration / 1000);
+    response.addHeader("Set-Cookie", cookie);
   }
 }
