@@ -165,12 +165,17 @@ public class AuthService {
   @Transactional
   public void logout(HttpServletRequest request, HttpServletResponse response) {
     String refreshToken = extractTokenFromCookie(request);
+
+    // refreshToken이 없으면 유효하지 않은 상태이므로 쿠키만 만료시키고 종료
     if (refreshToken == null) {
-      throw new CustomException(ErrorCode.INVALID_REFRESH_TOKEN);
+      expireRefreshTokenCookie(response);
+      return;
     }
 
+    // 토큰 유효성 검증 실패 시에도 쿠키는 만료시키고 종료
     if (!jwtUtil.validateRefreshToken(refreshToken)) {
-      throw new CustomException(ErrorCode.INVALID_REFRESH_TOKEN);
+      expireRefreshTokenCookie(response);
+      return;
     }
 
     String loginId = jwtUtil.extractLoginId(refreshToken);
