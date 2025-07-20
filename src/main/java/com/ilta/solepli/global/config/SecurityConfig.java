@@ -60,10 +60,7 @@ public class SecurityConfig {
                         "/api-docs",
                         "/api-docs/**",
                         "/v3/api-docs/**",
-                        "/health/**",
-                        "/kakao/callback",
-                        "/naver/callback",
-                        "/google/callback")
+                        "/health/**")
                     .permitAll()
                     .requestMatchers(
                         "/api/auth/**",
