@@ -134,18 +134,11 @@ public class AuthService {
     return LoginResponse.from(user.getId(), accessToken, user.getRole());
   }
 
-  private void addRefreshTokenToCookie(HttpServletResponse response, String refreshToken) {
-    String cookie =
-        String.format(
-            "refreshToken=%s; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=%d",
-            refreshToken, refreshTokenExpiration / 1000);
-    response.addHeader("Set-Cookie", cookie);
-  }
-
+  @Transactional
   public LoginResponse reissueAccessToken(HttpServletRequest request) {
     String refreshToken = extractTokenFromCookie(request);
     if (refreshToken == null) {
-      throw new CustomException(ErrorCode.INVALID_REFRESH_TOKEN);
+      throw new CustomException(ErrorCode.REFRESH_TOKEN_MISSING);
     }
 
     if (!jwtUtil.validateRefreshToken(refreshToken)) {
@@ -156,7 +149,7 @@ public class AuthService {
 
     String stored = redisTemplate.opsForValue().get("refresh:" + loginId);
     if (stored == null || !stored.equals(refreshToken)) {
-      throw new CustomException(ErrorCode.INVALID_REFRESH_TOKEN);
+      throw new CustomException(ErrorCode.REFRESH_TOKEN_MISSING);
     }
 
     User user =
@@ -187,6 +180,14 @@ public class AuthService {
 
     // 쿠키 만료
     expireRefreshTokenCookie(response);
+  }
+
+  private void addRefreshTokenToCookie(HttpServletResponse response, String refreshToken) {
+    String cookie =
+        String.format(
+            "refreshToken=%s; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=%d",
+            refreshToken, refreshTokenExpiration / 1000);
+    response.addHeader("Set-Cookie", cookie);
   }
 
   private String extractTokenFromCookie(HttpServletRequest request) {
