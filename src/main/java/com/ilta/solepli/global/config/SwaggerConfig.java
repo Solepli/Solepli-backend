@@ -20,6 +20,9 @@ public class SwaggerConfig {
   @Value("${server.url}")
   private String serverUrl;
 
+  @Value("${SWAGGER_URL}")
+  private String swaggerUrl;
+
   @Bean
   public OpenAPI openAPI() {
     String jwt = "JWT";
@@ -35,8 +38,11 @@ public class SwaggerConfig {
                     .bearerFormat("JWT"));
 
     ArrayList<Server> servers = new ArrayList<>();
-    servers.add(new Server().url("https://" + serverUrl).description("Solepli Server"));
-    servers.add(new Server().url("http://localhost:8080").description("Local Server"));
+    if (swaggerUrl.contains("localhost")) {
+      servers.add(new Server().url(swaggerUrl).description("Local Server"));
+    } else {
+      servers.add(new Server().url(swaggerUrl).description("Solepli Server"));
+    }
 
     return new OpenAPI()
         .components(new Components())
