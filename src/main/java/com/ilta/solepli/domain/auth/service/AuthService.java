@@ -8,6 +8,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 
@@ -24,6 +26,7 @@ import com.ilta.solepli.domain.user.repository.UserRepository;
 import com.ilta.solepli.domain.user.service.UserService;
 import com.ilta.solepli.global.exception.CustomException;
 import com.ilta.solepli.global.exception.ErrorCode;
+import com.ilta.solepli.global.util.JwtUtil;
 
 @Service
 @RequiredArgsConstructor
@@ -36,6 +39,7 @@ public class AuthService {
   private final JwtTokenProvider jwtTokenProvider;
   private final SolmarkPlaceCollectionRepository solmarkPlaceCollectionRepository;
   private final RedisTemplate<String, String> redisTemplate;
+  private final JwtUtil jwtUtil;
 
   @Value("${DEFAULT_PROFILE_URL}")
   private String defaultImageUrl;
@@ -136,5 +140,42 @@ public class AuthService {
             "refreshToken=%s; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=%d",
             refreshToken, refreshTokenExpiration / 1000);
     response.addHeader("Set-Cookie", cookie);
+  }
+
+  public LoginResponse reissueAccessToken(HttpServletRequest request) {
+    String refreshToken = extractTokenFromCookie(request);
+    if (refreshToken == null) {
+      throw new CustomException(ErrorCode.INVALID_REFRESH_TOKEN);
+    }
+
+    if (!jwtUtil.validateRefreshToken(refreshToken)) {
+      throw new CustomException(ErrorCode.INVALID_REFRESH_TOKEN);
+    }
+
+    String loginId = jwtUtil.extractLoginId(refreshToken);
+
+    String stored = redisTemplate.opsForValue().get("refresh:" + loginId);
+    if (stored == null || !stored.equals(refreshToken)) {
+      throw new CustomException(ErrorCode.INVALID_REFRESH_TOKEN);
+    }
+
+    User user =
+        userRepository
+            .findByLoginId(loginId)
+            .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+    String newAccessToken = jwtTokenProvider.generateAccessToken(user);
+
+    return LoginResponse.from(user.getId(), newAccessToken, user.getRole());
+  }
+
+  private String extractTokenFromCookie(HttpServletRequest request) {
+    if (request.getCookies() == null) return null;
+    for (Cookie cookie : request.getCookies()) {
+      if ("refreshToken".equals(cookie.getName())) {
+        return cookie.getValue();
+      }
+    }
+    return null;
   }
 }

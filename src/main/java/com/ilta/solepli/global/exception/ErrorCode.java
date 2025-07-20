@@ -10,11 +10,17 @@ public enum ErrorCode {
   // 에러코드 예시: 샘플 에러
   SAMPLE_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "예시: 샘플 에러가 발생했습니다."),
 
-  // JWT 액세스 토큰 관련 에러
   UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다."),
-  TOKEN_MISSING(HttpStatus.UNAUTHORIZED, "액세스 토큰이 없습니다."),
-  TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, "액세스 토큰이 만료되었습니다."),
-  INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "유효하지 않은 액세스 토큰입니다."),
+
+  // JWT 액세스 토큰 관련 에러
+  ACCESS_TOKEN_MISSING(HttpStatus.UNAUTHORIZED, "액세스 토큰이 없습니다."),
+  ACCESS_TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, "액세스 토큰이 만료되었습니다."),
+  INVALID_ACCESS_TOKEN(HttpStatus.UNAUTHORIZED, "유효하지 않은 액세스 토큰입니다."),
+
+  // JWT 리프레시 토큰 관련 에러
+  REFRESH_TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, "리프레시 토큰이 만료되었습니다."),
+  INVALID_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "유효하지 않은 리프레시 토큰입니다."),
+  REFRESH_TOKEN_MISSING(HttpStatus.UNAUTHORIZED, "리프레시 토큰이 존재하지 않습니다."),
 
   // 인증 관련 에러
   INCORRECT_ACCOUNT(HttpStatus.BAD_REQUEST, "해당 계정이 존재하지 않습니다."),

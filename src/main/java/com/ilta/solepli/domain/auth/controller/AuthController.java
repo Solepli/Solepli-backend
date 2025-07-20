@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -57,5 +58,14 @@ public class AuthController {
 
     LoginResponse loginResponse = authService.socialLogin(code, loginType, response);
     return ResponseEntity.ok().body(SuccessResponse.successWithData(loginResponse));
+  }
+
+  @Operation(
+      summary = "Access Token 재발급 API",
+      description = "쿠키에 저장된 Refresh Token을 통해 Access Token을 재발급합니다.")
+  @PostMapping("/reissue-token")
+  public ResponseEntity<SuccessResponse<LoginResponse>> refreshToken(HttpServletRequest request) {
+    LoginResponse response = authService.reissueAccessToken(request);
+    return ResponseEntity.ok().body(SuccessResponse.successWithData(response));
   }
 }
