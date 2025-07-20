@@ -68,4 +68,12 @@ public class AuthController {
     LoginResponse response = authService.reissueAccessToken(request);
     return ResponseEntity.ok().body(SuccessResponse.successWithData(response));
   }
+
+  @Operation(summary = "로그아웃 API", description = "Refresh Token을 만료시키고 Redis에서도 제거합니다.")
+  @PostMapping("/logout")
+  public ResponseEntity<SuccessResponse<Void>> logout(
+      HttpServletRequest request, HttpServletResponse response) {
+    authService.logout(request, response);
+    return ResponseEntity.ok().body(SuccessResponse.successWithNoData("로그아웃 성공"));
+  }
 }

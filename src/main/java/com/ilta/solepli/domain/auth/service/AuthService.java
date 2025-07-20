@@ -169,6 +169,26 @@ public class AuthService {
     return LoginResponse.from(user.getId(), newAccessToken, user.getRole());
   }
 
+  @Transactional
+  public void logout(HttpServletRequest request, HttpServletResponse response) {
+    String refreshToken = extractTokenFromCookie(request);
+    if (refreshToken == null) {
+      throw new CustomException(ErrorCode.INVALID_REFRESH_TOKEN);
+    }
+
+    if (!jwtUtil.validateRefreshToken(refreshToken)) {
+      throw new CustomException(ErrorCode.INVALID_REFRESH_TOKEN);
+    }
+
+    String loginId = jwtUtil.extractLoginId(refreshToken);
+
+    // Redis에서 refresh 토큰 삭제
+    redisTemplate.delete(REFRESH_PREFIX + loginId);
+
+    // 쿠키 만료
+    expireRefreshTokenCookie(response);
+  }
+
   private String extractTokenFromCookie(HttpServletRequest request) {
     if (request.getCookies() == null) return null;
     for (Cookie cookie : request.getCookies()) {
@@ -177,5 +197,11 @@ public class AuthService {
       }
     }
     return null;
+  }
+
+  private void expireRefreshTokenCookie(HttpServletResponse response) {
+    String expiredCookie =
+        String.format("refreshToken=; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=0");
+    response.addHeader("Set-Cookie", expiredCookie);
   }
 }
