@@ -147,7 +147,7 @@ public class AuthService {
 
     String loginId = jwtUtil.extractLoginId(refreshToken);
 
-    String stored = redisTemplate.opsForValue().get("refresh:" + loginId);
+    String stored = redisTemplate.opsForValue().get(REFRESH_PREFIX + loginId);
     if (stored == null || !stored.equals(refreshToken)) {
       throw new CustomException(ErrorCode.REFRESH_TOKEN_MISSING);
     }
