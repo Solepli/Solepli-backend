@@ -24,7 +24,7 @@ public class JwtUtil {
     this.key = Keys.hmacShaKeyFor(secretKey.getBytes());
   }
 
-  public String getLoginIdFromToken(String token) {
+  public String extractLoginId(String token) {
     // 토큰에서 사용자 ID 추출
     return Jwts.parserBuilder()
         .setSigningKey(key)
@@ -34,23 +34,42 @@ public class JwtUtil {
         .getSubject();
   }
 
-  public boolean validateToken(String token) {
+  public boolean validateAccessToken(String token) {
     try {
       Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
       return true;
 
     } catch (ExpiredJwtException e) {
-      throw new CustomException(ErrorCode.TOKEN_EXPIRED);
+      throw new CustomException(ErrorCode.ACCESS_TOKEN_EXPIRED);
     } catch (UnsupportedJwtException e) {
-      throw new CustomException(ErrorCode.INVALID_TOKEN); // 지원하지 않는 형식
+      throw new CustomException(ErrorCode.INVALID_ACCESS_TOKEN); // 지원하지 않는 형식
     } catch (MalformedJwtException e) {
-      throw new CustomException(ErrorCode.INVALID_TOKEN); // 잘못된 구조
+      throw new CustomException(ErrorCode.INVALID_ACCESS_TOKEN); // 잘못된 구조
     } catch (io.jsonwebtoken.security.SignatureException e) {
-      throw new CustomException(ErrorCode.INVALID_TOKEN); // 서명 오류
+      throw new CustomException(ErrorCode.INVALID_ACCESS_TOKEN); // 서명 오류
     } catch (IllegalArgumentException e) {
-      throw new CustomException(ErrorCode.INVALID_TOKEN); // 널 or 빈 문자열
+      throw new CustomException(ErrorCode.INVALID_ACCESS_TOKEN); // 널 or 빈 문자열
     } catch (JwtException e) {
-      throw new CustomException(ErrorCode.INVALID_TOKEN); // 기타 JWT 에러
+      throw new CustomException(ErrorCode.INVALID_ACCESS_TOKEN); // 기타 JWT 에러
+    }
+  }
+
+  public boolean validateRefreshToken(String token) {
+    try {
+      Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
+      return true;
+    } catch (ExpiredJwtException e) {
+      throw new CustomException(ErrorCode.REFRESH_TOKEN_EXPIRED);
+    } catch (UnsupportedJwtException e) {
+      throw new CustomException(ErrorCode.INVALID_REFRESH_TOKEN); // 지원하지 않는 형식
+    } catch (MalformedJwtException e) {
+      throw new CustomException(ErrorCode.INVALID_REFRESH_TOKEN); // 잘못된 구조
+    } catch (io.jsonwebtoken.security.SignatureException e) {
+      throw new CustomException(ErrorCode.INVALID_REFRESH_TOKEN); // 서명 오류
+    } catch (IllegalArgumentException e) {
+      throw new CustomException(ErrorCode.INVALID_REFRESH_TOKEN); // 널 or 빈 문자열
+    } catch (JwtException e) {
+      throw new CustomException(ErrorCode.INVALID_REFRESH_TOKEN); // 기타 JWT 에러
     }
   }
 }

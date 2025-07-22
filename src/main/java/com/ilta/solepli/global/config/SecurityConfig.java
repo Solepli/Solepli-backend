@@ -60,10 +60,7 @@ public class SecurityConfig {
                         "/api-docs",
                         "/api-docs/**",
                         "/v3/api-docs/**",
-                        "/health/**",
-                        "/kakao/callback",
-                        "/naver/callback",
-                        "/google/callback")
+                        "/health/**")
                     .permitAll()
                     .requestMatchers(
                         "/api/auth/**",
@@ -116,7 +113,8 @@ public class SecurityConfig {
     configuration.setAllowedMethods(
         Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
     configuration.setAllowedHeaders(
-        Arrays.asList("X-Requested-With", "Content-Type", "Authorization", "X-XSRF-token"));
+        Arrays.asList(
+            "X-Requested-With", "Content-Type", "Authorization", "X-XSRF-token", "Set-Cookie"));
     configuration.setAllowCredentials(true);
 
     UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

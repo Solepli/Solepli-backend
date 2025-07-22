@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -43,18 +45,35 @@ public class AuthController {
       description = "(관리자) 아이디와 비밀번호로 로그인합니다. 로그인에 사용할 아이디와 비밀번호를 입력해주세요.")
   @PostMapping("/login")
   public ResponseEntity<SuccessResponse<LoginResponse>> login(
-      @Valid @RequestBody BasicLoginRequest basicLoginRequest) {
+      @Valid @RequestBody BasicLoginRequest basicLoginRequest, HttpServletResponse response) {
 
-    LoginResponse loginResponse = authService.login(basicLoginRequest);
+    LoginResponse loginResponse = authService.login(basicLoginRequest, response);
     return ResponseEntity.ok().body(SuccessResponse.successWithData(loginResponse));
   }
 
   @Operation(summary = "소셜 로그인 API", description = "소셜 로그인을 진행합니다. (카카오, 네이버, 구글) 인가코드를 넣어주세요.")
   @GetMapping("/login/{loginType}")
   public ResponseEntity<SuccessResponse<LoginResponse>> login(
-      @PathVariable String loginType, @RequestParam String code) {
+      @PathVariable String loginType, @RequestParam String code, HttpServletResponse response) {
 
-    LoginResponse loginResponse = authService.socialLogin(code, loginType);
+    LoginResponse loginResponse = authService.socialLogin(code, loginType, response);
     return ResponseEntity.ok().body(SuccessResponse.successWithData(loginResponse));
+  }
+
+  @Operation(
+      summary = "Access Token 재발급 API",
+      description = "쿠키에 저장된 Refresh Token을 통해 Access Token을 재발급합니다.")
+  @PostMapping("/reissue-token")
+  public ResponseEntity<SuccessResponse<LoginResponse>> refreshToken(HttpServletRequest request) {
+    LoginResponse response = authService.reissueAccessToken(request);
+    return ResponseEntity.ok().body(SuccessResponse.successWithData(response));
+  }
+
+  @Operation(summary = "로그아웃 API", description = "Refresh Token을 만료시키고 Redis에서도 제거합니다.")
+  @PostMapping("/logout")
+  public ResponseEntity<SuccessResponse<Void>> logout(
+      HttpServletRequest request, HttpServletResponse response) {
+    authService.logout(request, response);
+    return ResponseEntity.ok().body(SuccessResponse.successWithNoData("로그아웃 성공"));
   }
 }
