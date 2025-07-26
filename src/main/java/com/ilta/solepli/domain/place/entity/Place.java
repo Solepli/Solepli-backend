@@ -6,7 +6,6 @@ import java.util.List;
 import jakarta.persistence.*;
 import lombok.*;
 
-import com.ilta.solepli.domain.place.entity.mapping.PlaceCategory;
 import com.ilta.solepli.domain.review.entity.Review;
 import com.ilta.solepli.global.entity.Timestamped;
 
@@ -61,5 +60,15 @@ public class Place extends Timestamped {
 
   public void updateRating(Double rating) {
     this.rating = rating;
+  }
+
+  public void addPlaceHour(PlaceHour placeHour) {
+    this.placeHours.add(placeHour);
+    placeHour.setPlace(this);
+  }
+
+  public void addPlaceCategory(PlaceCategory placeCategory) {
+    this.placeCategories.add(placeCategory);
+    placeCategory.setPlace(this);
   }
 }
