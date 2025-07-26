@@ -10,7 +10,7 @@ import com.ilta.solepli.domain.category.entity.QCategory;
 import com.ilta.solepli.domain.place.dto.response.PlaceSearchResponseDTO;
 import com.ilta.solepli.domain.place.entity.Place;
 import com.ilta.solepli.domain.place.entity.QPlace;
-import com.ilta.solepli.domain.place.entity.mapping.QPlaceCategory;
+import com.ilta.solepli.domain.place.entity.QPlaceCategory;
 import com.ilta.solepli.domain.review.entity.QReview;
 import com.ilta.solepli.domain.review.entity.Review;
 import com.ilta.solepli.domain.review.entity.mapping.QReviewImage;

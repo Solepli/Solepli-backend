@@ -2,7 +2,9 @@ package com.ilta.solepli.domain.place.controller;
 
 import java.util.List;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -11,6 +13,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
+import com.ilta.solepli.domain.place.dto.reqeust.AddPlaceRequest;
 import com.ilta.solepli.domain.place.dto.reqeust.RequestAddPlaceRequest;
 import com.ilta.solepli.domain.place.dto.response.PlaceSearchResponse;
 import com.ilta.solepli.domain.place.service.PlaceService;
@@ -48,5 +51,17 @@ public class PlaceController {
     placeService.requestAddPlace(customUserDetails, requestAddPlaceRequest);
 
     return ResponseEntity.ok(SuccessResponse.successWithNoData("장소 추가 요청 성공"));
+  }
+
+  @Operation(summary = "장소 추가 API", description = "장소 추가 API 입니다.")
+  @PreAuthorize("hasRole('ADMIN')")
+  @PostMapping
+  public ResponseEntity<SuccessResponse<Void>> addPlace(
+      @Valid @RequestBody AddPlaceRequest addPlaceRequest) {
+
+    placeService.addPlace(addPlaceRequest);
+
+    return ResponseEntity.status(HttpStatus.CREATED)
+        .body(SuccessResponse.successWithNoData("장소 추가 성공"));
   }
 }

@@ -1,4 +1,4 @@
-package com.ilta.solepli.domain.place.entity.mapping;
+package com.ilta.solepli.domain.place.entity;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -17,7 +17,6 @@ import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
 import com.ilta.solepli.domain.category.entity.Category;
-import com.ilta.solepli.domain.place.entity.Place;
 import com.ilta.solepli.global.entity.Timestamped;
 
 @Entity
@@ -41,4 +40,8 @@ public class PlaceCategory extends Timestamped {
   @JoinColumn(name = "category_id")
   @OnDelete(action = OnDeleteAction.CASCADE) // Category 삭제시 PlaceCategory 삭제
   private Category category;
+
+  protected void setPlace(Place place) {
+    this.place = place;
+  }
 }

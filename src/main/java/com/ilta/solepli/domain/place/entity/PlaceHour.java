@@ -43,4 +43,8 @@ public class PlaceHour extends Timestamped {
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "place_id")
   private Place place;
+
+  protected void setPlace(Place place) {
+    this.place = place;
+  }
 }
