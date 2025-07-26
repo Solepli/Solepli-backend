@@ -12,7 +12,7 @@ import lombok.RequiredArgsConstructor;
 
 import com.ilta.solepli.domain.category.entity.QCategory;
 import com.ilta.solepli.domain.place.entity.QPlace;
-import com.ilta.solepli.domain.place.entity.mapping.QPlaceCategory;
+import com.ilta.solepli.domain.place.entity.QPlaceCategory;
 import com.ilta.solepli.domain.sollect.dto.PopularSollectResponseContent;
 import com.ilta.solepli.domain.sollect.dto.QPopularSollectResponseContent;
 import com.ilta.solepli.domain.sollect.dto.QSollectSearchResponseContent;
