@@ -20,9 +20,16 @@ import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 
+import com.ilta.solepli.domain.category.entity.Category;
+import com.ilta.solepli.domain.category.repository.CategoryRepository;
+import com.ilta.solepli.domain.place.dto.reqeust.AddPlaceRequest;
+import com.ilta.solepli.domain.place.dto.reqeust.OpeningHour;
 import com.ilta.solepli.domain.place.dto.reqeust.RequestAddPlaceRequest;
 import com.ilta.solepli.domain.place.dto.response.PlaceSearchResponse;
 import com.ilta.solepli.domain.place.dto.response.PlaceSearchResponseDTO;
+import com.ilta.solepli.domain.place.entity.Place;
+import com.ilta.solepli.domain.place.entity.PlaceCategory;
+import com.ilta.solepli.domain.place.entity.PlaceHour;
 import com.ilta.solepli.domain.place.repository.PlaceRepository;
 import com.ilta.solepli.domain.solmark.place.entity.SolmarkPlace;
 import com.ilta.solepli.domain.solmark.place.repository.SolmarkPlaceRepository;
@@ -46,6 +53,7 @@ public class PlaceService {
   private final PlaceRepository placeRepository;
   private final JavaMailSender javaMailSender;
   private final SolmarkPlaceRepository solmarkPlaceRepository;
+  private final CategoryRepository categoryRepository;
 
   @Transactional(readOnly = true)
   public List<PlaceSearchResponse> getSearchPlaces(User user, String keyword) {
@@ -134,5 +142,64 @@ public class PlaceService {
 
     // 쏠마크 장소 ID Set 반환
     return solmarkPlaces.stream().map(sp -> sp.getPlace().getId()).collect(Collectors.toSet());
+  }
+
+  @Transactional
+  public void addPlace(AddPlaceRequest req) {
+    // Place 엔티티 생성
+    Place place = createPlace(req);
+
+    // 카테고리 연관관계 설정
+    addCategoriesToPlace(place, req.category());
+
+    // 운영시간 연관관계 설정
+    addOpeningHoursToPlace(place, req.openingHours());
+
+    placeRepository.save(place);
+  }
+
+  private Place createPlace(AddPlaceRequest req) {
+    return Place.builder()
+        .name(req.placeName())
+        .address(req.address())
+        .district(req.district())
+        .neighborhood(req.neighborhood())
+        .latitude(req.latitude())
+        .longitude(req.longitude())
+        .types(req.types())
+        .googlePlaceId("") // 운영시간, types, 위도, 경도를 요청 DTO에 받기때문에 빈값으로 설정
+        .build();
+  }
+
+  private void addCategoriesToPlace(Place place, List<String> categoryNames) {
+    // 각 카테고리명 → Category 조회 → PlaceCategory 생성 및 Place에 추가
+    categoryNames.forEach(
+        categoryName -> {
+          Category category =
+              categoryRepository
+                  .findByName(categoryName)
+                  .orElseThrow(() -> new CustomException(ErrorCode.CATEGORY_NOT_FOUND));
+
+          PlaceCategory placeCategory = PlaceCategory.builder().category(category).build();
+
+          place.addPlaceCategory(placeCategory);
+        });
+  }
+
+  private void addOpeningHoursToPlace(Place place, List<OpeningHour> openingHours) {
+    if (openingHours != null) {
+      // 각 OpeningHour DTO → PlaceHour 엔티티 생성 및 Place에 추가
+      openingHours.forEach(
+          openingHour -> {
+            PlaceHour placeHour =
+                PlaceHour.builder()
+                    .dayOfWeek(openingHour.dayOfWeek())
+                    .startTime(openingHour.startTime())
+                    .endTime(openingHour.endTime())
+                    .build();
+
+            place.addPlaceHour(placeHour);
+          });
+    }
   }
 }
