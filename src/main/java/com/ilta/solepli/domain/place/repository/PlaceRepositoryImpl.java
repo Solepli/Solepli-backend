@@ -2,7 +2,9 @@ package com.ilta.solepli.domain.place.repository;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
+import com.querydsl.core.BooleanBuilder;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 
@@ -89,14 +91,28 @@ public class PlaceRepositoryImpl implements PlaceRepositoryCustom {
   }
 
   @Override
-  public List<PlaceSearchResponseDTO> getPlacesByKeyword(String keyword) {
+  public List<PlaceSearchResponseDTO> getPlacesByKeyword(
+      Long cursorId, Integer size, String keyword) {
+
+    BooleanBuilder cond = new BooleanBuilder();
+    if (keyword != null && !keyword.isBlank()) {
+      cond.and(p.name.contains(keyword).or(p.address.contains(keyword)));
+    }
+    if (cursorId != null) {
+      cond.and(p.id.lt(cursorId));
+    }
+
     return jpaQueryFactory
         .select(p)
+        .distinct()
         .from(p)
-        .join(p.placeCategories, pc)
-        .join(pc.category, c)
-        .where(p.name.contains(keyword))
-        .limit(10)
+        .leftJoin(p.placeCategories, pc)
+        .fetchJoin()
+        .leftJoin(pc.category, c)
+        .fetchJoin()
+        .where(cond)
+        .orderBy(p.id.desc())
+        .limit(size + 1) // 커서 페이징이므로 size+1
         .fetch()
         .stream()
         .map(
@@ -110,7 +126,7 @@ public class PlaceRepositoryImpl implements PlaceRepositoryCustom {
                     .latitude(p.getLatitude())
                     .longitude(p.getLongitude())
                     .build())
-        .toList();
+        .collect(Collectors.toList());
   }
 
   @Override

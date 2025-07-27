@@ -31,6 +31,7 @@ import com.ilta.solepli.domain.place.entity.Place;
 import com.ilta.solepli.domain.place.entity.PlaceCategory;
 import com.ilta.solepli.domain.place.entity.PlaceHour;
 import com.ilta.solepli.domain.place.repository.PlaceRepository;
+import com.ilta.solepli.domain.sollect.dto.response.SollectSearchResponse.CursorInfo;
 import com.ilta.solepli.domain.solmark.place.entity.SolmarkPlace;
 import com.ilta.solepli.domain.solmark.place.repository.SolmarkPlaceRepository;
 import com.ilta.solepli.domain.user.entity.User;
@@ -56,17 +57,32 @@ public class PlaceService {
   private final CategoryRepository categoryRepository;
 
   @Transactional(readOnly = true)
-  public List<PlaceSearchResponse> getSearchPlaces(User user, String keyword) {
-    List<PlaceSearchResponseDTO> responseDTOList = placeRepository.getPlacesByKeyword(keyword);
-    List<Long> placeIds = responseDTOList.stream().map(dto -> dto.id()).toList();
+  public PlaceSearchResponse getSearchPlaces(
+      User user, Long cursorId, Integer size, String keyword) {
+    List<PlaceSearchResponseDTO> responseDTOList =
+        placeRepository.getPlacesByKeyword(cursorId, size, keyword);
+    System.out.println(responseDTOList.size());
+    boolean hasNext = responseDTOList.size() > size;
+    if (hasNext) responseDTOList.remove(size); // 커서 페이징이므로 초과 1개 제거
 
+    List<Long> placeIds = responseDTOList.stream().map(dto -> dto.id()).toList();
     Set<Long> solmarkedPlaceIds = getSolmarkedPlaceIds(user, placeIds);
 
-    List<PlaceSearchResponse> response = new ArrayList<>();
+    List<PlaceSearchResponse.PlaceSearchContent> contents = new ArrayList<>();
     for (PlaceSearchResponseDTO dto : responseDTOList) {
-      PlaceSearchResponse p = PlaceSearchResponse.from(dto, solmarkedPlaceIds.contains(dto.id()));
-      response.add(p);
+      PlaceSearchResponse.PlaceSearchContent p =
+          PlaceSearchResponse.PlaceSearchContent.from(dto, solmarkedPlaceIds.contains(dto.id()));
+      contents.add(p);
     }
+
+    Long nextCursorId = hasNext ? contents.get(contents.size() - 1).id() : null;
+
+    PlaceSearchResponse response =
+        PlaceSearchResponse.builder()
+            .contents(contents)
+            .cursorInfo(CursorInfo.builder().hasNext(hasNext).nextCursorId(nextCursorId).build())
+            .build();
+
     return response;
   }
 

@@ -16,7 +16,7 @@ public interface PlaceRepositoryCustom {
 
   Integer getRecommendationPercent(Long placeId);
 
-  List<PlaceSearchResponseDTO> getPlacesByKeyword(String keyword);
+  List<PlaceSearchResponseDTO> getPlacesByKeyword(Long cursorId, Integer size, String keyword);
 
   SollectPlaceAddPreviewResponse getSollectAddPreview(Long placeId);
 }

@@ -1,7 +1,5 @@
 package com.ilta.solepli.domain.place.controller;
 
-import java.util.List;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -32,12 +30,15 @@ public class PlaceController {
 
   @Operation(summary = "장소 검색 API", description = "장소 추가 화면에서 사용되는 검색 API입니다.")
   @GetMapping("/search")
-  public ResponseEntity<SuccessResponse<List<PlaceSearchResponse>>> searchPlaces(
+  public ResponseEntity<SuccessResponse<PlaceSearchResponse>> searchPlaces(
       @AuthenticationPrincipal CustomUserDetails customUserDetails,
+      @RequestParam(required = false) Long cursorId,
+      @RequestParam(defaultValue = "10") int size,
       @RequestParam(required = true) String keyword) {
 
     User user = SecurityUtil.getUser(customUserDetails);
-    List<PlaceSearchResponse> searchContents = placeService.getSearchPlaces(user, keyword);
+    PlaceSearchResponse searchContents =
+        placeService.getSearchPlaces(user, cursorId, size, keyword);
 
     return ResponseEntity.ok(SuccessResponse.successWithData(searchContents));
   }
