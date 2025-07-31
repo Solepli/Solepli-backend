@@ -379,7 +379,7 @@ public class SolmapService {
             });
   }
 
-  /** 주소에 keyword가 포함된 장소를 거리순으로 조회하여 DTO로 매핑한 스트림을 반환. */
+  /** 주소에 keyword가 포함된 장소를 거리순으로 조회하여 반환. */
   private List<Place> getPlacesByAddressKeyword(String keyword, Double userLat, Double userLng) {
     return jpaQueryFactory
         .select(p)
