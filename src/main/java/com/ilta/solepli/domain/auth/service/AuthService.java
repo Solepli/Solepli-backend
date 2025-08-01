@@ -26,6 +26,7 @@ import com.ilta.solepli.domain.user.repository.UserRepository;
 import com.ilta.solepli.domain.user.service.UserService;
 import com.ilta.solepli.global.exception.CustomException;
 import com.ilta.solepli.global.exception.ErrorCode;
+import com.ilta.solepli.global.properties.CookieProperties;
 import com.ilta.solepli.global.util.JwtUtil;
 
 @Service
@@ -40,15 +41,13 @@ public class AuthService {
   private final SolmarkPlaceCollectionRepository solmarkPlaceCollectionRepository;
   private final RedisTemplate<String, String> redisTemplate;
   private final JwtUtil jwtUtil;
+  private final CookieProperties cookieProperties;
 
   @Value("${DEFAULT_PROFILE_URL}")
   private String defaultImageUrl;
 
   @Value("${spring.jwt.refresh.token.expiration}")
   private long refreshTokenExpiration;
-
-  @Value("${FRONTEND_DOMAIN}")
-  private String frontendDomain;
 
   private static final String REFRESH_PREFIX = "refresh:";
 
@@ -191,11 +190,23 @@ public class AuthService {
   }
 
   private void addRefreshTokenToCookie(HttpServletResponse response, String refreshToken) {
-    String cookie =
+    StringBuilder cookie = new StringBuilder();
+    cookie.append(
         String.format(
-            "refreshToken=%s; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=%d; Domain=%s",
-            refreshToken, refreshTokenExpiration / 1000, frontendDomain);
-    response.addHeader("Set-Cookie", cookie);
+            "refreshToken=%s; Path=/; HttpOnly; SameSite=None; Max-Age=%d",
+            refreshToken, refreshTokenExpiration / 1000));
+
+    // Secure 적용 (prod에서만 true)
+    if (cookieProperties.isSecure()) {
+      cookie.append("; Secure");
+    }
+
+    // Domain 설정 (prod에서만 설정됨)
+    if (cookieProperties.getDomain() != null && !cookieProperties.getDomain().isEmpty()) {
+      cookie.append("; Domain=").append(cookieProperties.getDomain());
+    }
+
+    response.addHeader("Set-Cookie", cookie.toString());
   }
 
   private String extractTokenFromCookie(HttpServletRequest request) {
@@ -209,10 +220,17 @@ public class AuthService {
   }
 
   private void expireRefreshTokenCookie(HttpServletResponse response) {
-    String expiredCookie =
-        String.format(
-            "refreshToken=; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=0; Domain=%s",
-            frontendDomain);
-    response.addHeader("Set-Cookie", expiredCookie);
+    StringBuilder cookie = new StringBuilder();
+    cookie.append("refreshToken=; Path=/; HttpOnly; SameSite=None; Max-Age=0");
+
+    if (cookieProperties.isSecure()) {
+      cookie.append("; Secure");
+    }
+
+    if (cookieProperties.getDomain() != null && !cookieProperties.getDomain().isEmpty()) {
+      cookie.append("; Domain=").append(cookieProperties.getDomain());
+    }
+
+    response.addHeader("Set-Cookie", cookie.toString());
   }
 }

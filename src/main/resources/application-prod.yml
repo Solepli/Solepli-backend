@@ -113,3 +113,7 @@ cloud:
 mail:
   to: ${MAIL_USERNAME} # 발신 메일
   from: ${SOLEPLI_MAIL} # 수신 메일
+
+cookie:
+  domain: ${FRONTEND_DOMAIN}
+  secure: false
