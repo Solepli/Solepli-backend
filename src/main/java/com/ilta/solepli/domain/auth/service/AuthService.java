@@ -193,7 +193,7 @@ public class AuthService {
   private void addRefreshTokenToCookie(HttpServletResponse response, String refreshToken) {
     String cookie =
         String.format(
-            "refreshToken=%s; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=%d; Domain=%s",
+            "refreshToken=%s; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=%d; Domain=%s",
             refreshToken, refreshTokenExpiration / 1000, frontendDomain);
     response.addHeader("Set-Cookie", cookie);
   }
@@ -211,7 +211,7 @@ public class AuthService {
   private void expireRefreshTokenCookie(HttpServletResponse response) {
     String expiredCookie =
         String.format(
-            "refreshToken=; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=0; Domain=%s",
+            "refreshToken=; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=0; Domain=%s",
             frontendDomain);
     response.addHeader("Set-Cookie", expiredCookie);
   }
