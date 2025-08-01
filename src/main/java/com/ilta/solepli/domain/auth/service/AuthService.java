@@ -47,6 +47,9 @@ public class AuthService {
   @Value("${spring.jwt.refresh.token.expiration}")
   private long refreshTokenExpiration;
 
+  @Value("${FRONTEND_DOMAIN}")
+  private String frontendDomain;
+
   private static final String REFRESH_PREFIX = "refresh:";
 
   @Transactional
@@ -190,8 +193,8 @@ public class AuthService {
   private void addRefreshTokenToCookie(HttpServletResponse response, String refreshToken) {
     String cookie =
         String.format(
-            "refreshToken=%s; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=%d",
-            refreshToken, refreshTokenExpiration / 1000);
+            "refreshToken=%s; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=%d; Domain=%s",
+            refreshToken, refreshTokenExpiration / 1000, frontendDomain);
     response.addHeader("Set-Cookie", cookie);
   }
 
@@ -207,7 +210,9 @@ public class AuthService {
 
   private void expireRefreshTokenCookie(HttpServletResponse response) {
     String expiredCookie =
-        String.format("refreshToken=; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=0");
+        String.format(
+            "refreshToken=; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=0; Domain=%s",
+            frontendDomain);
     response.addHeader("Set-Cookie", expiredCookie);
   }
 }
