@@ -116,4 +116,4 @@ mail:
 
 cookie:
   domain: ${FRONTEND_DOMAIN}
-  secure: false
+  secure: true
