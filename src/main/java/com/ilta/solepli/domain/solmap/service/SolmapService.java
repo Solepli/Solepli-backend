@@ -331,22 +331,70 @@ public class SolmapService {
     // 로그인, 비로그인 판별
     User user = SecurityUtil.getUser(customUserDetails);
     // 구 검색 결과 스트림
-    Stream<RelatedSearchResponse> placesDistrictLike = getDistrictsByKeyword(keyword);
+    Stream<RelatedSearchResponse> districtResponses = getRelatedSearchResponsesByDistrict(keyword);
     // 동 검색 결과 스트림
-    Stream<RelatedSearchResponse> placesNeighborhoodLike = getNeighborhoodsByKeyword(keyword);
+    Stream<RelatedSearchResponse> neighborhoodResponses =
+        getRelatedSearchResponsesByNeighborhood(keyword);
     // 장소 검색 결과 스트림 (거리순)
-    Stream<RelatedSearchResponse> placesNameLike =
-        getPlacesByKeyword(keyword, userLat, userLng, user);
+    Stream<RelatedSearchResponse> nameResponses =
+        getRelatedSearchResponsesByName(keyword, userLat, userLng, user);
+    // 주소 검색 결과 스트림
+    Stream<RelatedSearchResponse> addressResponses =
+        getRelatedSearchResponsesByAddress(keyword, userLat, userLng, user);
 
     // 스트림을 합쳐서, 앞에서부터 MAX개만 리스트로 수집
-    return Stream.of(placesDistrictLike, placesNeighborhoodLike, placesNameLike)
+    return Stream.of(districtResponses, neighborhoodResponses, nameResponses, addressResponses)
         .flatMap(Function.identity())
         .limit(MAX_RELATED_SEARCH)
         .toList();
   }
 
+  private Stream<RelatedSearchResponse> getRelatedSearchResponsesByAddress(
+      String keyword, Double userLat, Double userLng, User user) {
+    // 장소 조회
+    List<Place> places = getPlacesByAddressKeyword(keyword, userLat, userLng);
+    // 쏠마크한 PlaceId 리스트 조회
+    Set<Long> solmarkedPlaceIds = getSolmarkedPlaceIds(user, places);
+
+    return places.stream()
+        .map(
+            p -> {
+              // 각 장소 쏠마크 여부 판별
+              boolean isMarked = solmarkedPlaceIds.contains(p.getId());
+
+              return RelatedSearchResponse.builder()
+                  .id(p.getId())
+                  .type(SearchType.PLACE)
+                  .name(p.getName())
+                  .address(p.getAddress())
+                  // 미터 단위 계산 후, m/km DTO로 변환
+                  .distance(
+                      Distance.fromMeter(
+                          (int)
+                              calculateDistance(
+                                  userLat, userLng, p.getLatitude(), p.getLongitude())))
+                  .category(getMainCategory(p))
+                  .isMarked(isMarked)
+                  .build();
+            });
+  }
+
+  /** 주소에 keyword가 포함된 장소를 거리순으로 조회하여 반환. */
+  private List<Place> getPlacesByAddressKeyword(String keyword, Double userLat, Double userLng) {
+    return jpaQueryFactory
+        .select(p)
+        .from(p)
+        .join(p.placeCategories, pc)
+        .fetchJoin()
+        .join(pc.category, c)
+        .fetchJoin()
+        .where(p.address.contains(keyword))
+        .orderBy(distance(userLat, userLng).asc())
+        .fetch();
+  }
+
   /** keyword가 포함된 구 명을 중복 없이 조회하여 DTO로 매핑한 스트림을 반환. */
-  private Stream<RelatedSearchResponse> getDistrictsByKeyword(String keyword) {
+  private Stream<RelatedSearchResponse> getRelatedSearchResponsesByDistrict(String keyword) {
     return jpaQueryFactory
         .select(p.district)
         .distinct()
@@ -358,7 +406,7 @@ public class SolmapService {
   }
 
   /** keyword가 포함된 동 명을 중복 없이 조회하여 DTO로 매핑한 스트림을 반환. */
-  private Stream<RelatedSearchResponse> getNeighborhoodsByKeyword(String keyword) {
+  private Stream<RelatedSearchResponse> getRelatedSearchResponsesByNeighborhood(String keyword) {
     return jpaQueryFactory
         .select(p.neighborhood)
         .distinct()
@@ -370,7 +418,7 @@ public class SolmapService {
   }
 
   /** keyword가 포함된 장소를 거리순으로 조회하여 DTO로 매핑한 스트림을 반환. */
-  private Stream<RelatedSearchResponse> getPlacesByKeyword(
+  private Stream<RelatedSearchResponse> getRelatedSearchResponsesByName(
       String keyword, Double userLat, Double userLng, User user) {
     // 장소 조회
     List<Place> places = getPlaces(keyword, userLat, userLng);
