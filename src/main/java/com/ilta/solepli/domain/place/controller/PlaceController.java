@@ -34,10 +34,13 @@ public class PlaceController {
   @GetMapping("/search")
   public ResponseEntity<SuccessResponse<List<PlaceSearchResponse>>> searchPlaces(
       @AuthenticationPrincipal CustomUserDetails customUserDetails,
-      @RequestParam(required = true) String keyword) {
+      @RequestParam String keyword,
+      @RequestParam Double userLat,
+      @RequestParam Double userLng) {
 
     User user = SecurityUtil.getUser(customUserDetails);
-    List<PlaceSearchResponse> searchContents = placeService.getSearchPlaces(user, keyword);
+    List<PlaceSearchResponse> searchContents =
+        placeService.getSearchPlaces(user, keyword, userLat, userLng);
 
     return ResponseEntity.ok(SuccessResponse.successWithData(searchContents));
   }

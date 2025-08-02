@@ -1,8 +1,14 @@
 package com.ilta.solepli.domain.place.repository;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
+import com.querydsl.core.BooleanBuilder;
+import com.querydsl.core.Tuple;
+import com.querydsl.core.types.dsl.Expressions;
+import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 
@@ -11,6 +17,7 @@ import com.ilta.solepli.domain.place.dto.response.PlaceSearchResponseDTO;
 import com.ilta.solepli.domain.place.entity.Place;
 import com.ilta.solepli.domain.place.entity.QPlace;
 import com.ilta.solepli.domain.place.entity.QPlaceCategory;
+import com.ilta.solepli.domain.place.entity.SearchType;
 import com.ilta.solepli.domain.review.entity.QReview;
 import com.ilta.solepli.domain.review.entity.Review;
 import com.ilta.solepli.domain.review.entity.mapping.QReviewImage;
@@ -89,27 +96,62 @@ public class PlaceRepositoryImpl implements PlaceRepositoryCustom {
   }
 
   @Override
-  public List<PlaceSearchResponseDTO> getPlacesByKeyword(String keyword) {
-    return jpaQueryFactory
-        .select(p)
-        .from(p)
-        .join(p.placeCategories, pc)
-        .join(pc.category, c)
-        .where(p.name.contains(keyword))
-        .limit(10)
-        .fetch()
-        .stream()
+  public List<PlaceSearchResponseDTO> getPlacesByKeyword(
+      String keyword, Double userLat, Double userLng, SearchType searchType, Long limit) {
+
+    // 0) 조건
+    BooleanBuilder cond = new BooleanBuilder();
+    if (searchType == SearchType.PLACE_NAME) cond.and(p.name.contains(keyword));
+    else cond.and(p.address.contains(keyword));
+
+    NumberExpression<Double> dist = distance(userLat, userLng);
+
+    // 1) 루트(Place)만으로 거리 오름차순 + tie-breaker(p.id) + limit
+    //    - 컬렉션 fetch join 없음 → 인메모리 페이징 경고 제거
+    List<Tuple> rows =
+        jpaQueryFactory
+            .select(p.id, p.name, p.types, p.address, p.latitude, p.longitude)
+            .from(p)
+            .where(cond)
+            .orderBy(dist.asc(), p.id.asc())
+            .limit(limit == null ? 0 : limit) // null 방지 (필요시 기본값 사용)
+            .fetch();
+
+    if (rows.isEmpty()) return List.of();
+
+    List<Long> placeIds = rows.stream().map(t -> t.get(p.id)).toList();
+
+    // 2) 메인 카테고리 맵 (각 place별 'PlaceCategory.id'가 가장 작은 카테고리의 이름 선택)
+    List<Tuple> cats =
+        jpaQueryFactory
+            .select(pc.place.id, pc.id, c.name)
+            .from(pc)
+            .join(pc.category, c)
+            .where(pc.place.id.in(placeIds))
+            .orderBy(pc.place.id.asc(), pc.id.asc())
+            .fetch();
+
+    Map<Long, String> mainCategoryMap = new LinkedHashMap<>();
+    for (Tuple t : cats) {
+      Long placeId = t.get(pc.place.id);
+      mainCategoryMap.putIfAbsent(placeId, t.get(c.name)); // 첫 행 = 최소 pc.id
+    }
+
+    // 3) DTO 조립 (rows 순서 == 거리순 유지)
+    return rows.stream()
         .map(
-            p ->
-                PlaceSearchResponseDTO.builder()
-                    .id(p.getId())
-                    .name(p.getName())
-                    .category(getMainCategory(p))
-                    .detailedCategory(p.getTypes())
-                    .address(p.getAddress())
-                    .latitude(p.getLatitude())
-                    .longitude(p.getLongitude())
-                    .build())
+            t -> {
+              Long id = t.get(p.id);
+              return PlaceSearchResponseDTO.builder()
+                  .id(id)
+                  .name(t.get(p.name))
+                  .category(mainCategoryMap.get(id)) // 항상 존재 전제(없으면 null 가능)
+                  .detailedCategory(t.get(p.types))
+                  .address(t.get(p.address))
+                  .latitude(t.get(p.latitude))
+                  .longitude(t.get(p.longitude))
+                  .build();
+            })
         .toList();
   }
 
@@ -135,5 +177,20 @@ public class PlaceRepositoryImpl implements PlaceRepositoryCustom {
   /** 장소에 연결된 카테고리 중 첫 번째(대표) 카테고리명을 반환. */
   private String getMainCategory(Place place) {
     return place.getPlaceCategories().get(0).getCategory().getName();
+  }
+
+  // 장소 ~ 사용자 거리 계산(Haversine 공식, km단위)
+  private NumberExpression<Double> distance(double userLat, double userLng) {
+    return Expressions.numberTemplate(
+        Double.class,
+        "6371 * acos("
+            + " cos(radians({0})) * cos(radians({1})) * cos(radians({2}) - radians({3})) +"
+            + " sin(radians({0})) * sin(radians({1}))"
+            + ")",
+        userLat, // {0}
+        p.latitude, // {1}
+        p.longitude, // {2}
+        userLng // {3}
+        );
   }
 }
