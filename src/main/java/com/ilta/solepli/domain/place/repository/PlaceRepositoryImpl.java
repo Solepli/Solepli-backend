@@ -1,5 +1,6 @@
 package com.ilta.solepli.domain.place.repository;
 
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -99,60 +100,41 @@ public class PlaceRepositoryImpl implements PlaceRepositoryCustom {
   public List<PlaceSearchResponseDTO> getPlacesByKeyword(
       String keyword, Double userLat, Double userLng, SearchType searchType, Long limit) {
 
-    // 0) 조건
+    // 0) 검색 조건
     BooleanBuilder cond = new BooleanBuilder();
     if (searchType == SearchType.PLACE_NAME) cond.and(p.name.contains(keyword));
     else cond.and(p.address.contains(keyword));
 
-    NumberExpression<Double> dist = distance(userLat, userLng);
+    long k = (limit == null ? 10L : limit);
 
-    // 1) 루트(Place)만으로 거리 오름차순 + tie-breaker(p.id) + limit
-    //    - 컬렉션 fetch join 없음 → 인메모리 페이징 경고 제거
+    // 좌표가 있으면 거리순 정렬
+    if (userLat != null && userLng != null) {
+      NumberExpression<Double> dist = distance(userLat, userLng);
+      List<Tuple> rows =
+          jpaQueryFactory
+              .select(p.id, p.name, p.types, p.address, p.latitude, p.longitude)
+              .from(p)
+              .where(cond)
+              .orderBy(dist.asc(), p.id.asc())
+              .limit(k)
+              .fetch();
+
+      return assemblePlaceDTO(rows);
+    }
+
+    // 좌표가 없을 경우, 전부 가져온 다음, 섞고 자르기
     List<Tuple> rows =
         jpaQueryFactory
             .select(p.id, p.name, p.types, p.address, p.latitude, p.longitude)
             .from(p)
             .where(cond)
-            .orderBy(dist.asc(), p.id.asc())
-            .limit(limit == null ? 0 : limit) // null 방지 (필요시 기본값 사용)
+            .orderBy(p.id.asc())
             .fetch();
 
-    if (rows.isEmpty()) return List.of();
+    Collections.shuffle(rows);
+    if (rows.size() > k) rows = rows.subList(0, (int) k);
 
-    List<Long> placeIds = rows.stream().map(t -> t.get(p.id)).toList();
-
-    // 2) 메인 카테고리 맵 (각 place별 'PlaceCategory.id'가 가장 작은 카테고리의 이름 선택)
-    List<Tuple> cats =
-        jpaQueryFactory
-            .select(pc.place.id, pc.id, c.name)
-            .from(pc)
-            .join(pc.category, c)
-            .where(pc.place.id.in(placeIds))
-            .orderBy(pc.place.id.asc(), pc.id.asc())
-            .fetch();
-
-    Map<Long, String> mainCategoryMap = new LinkedHashMap<>();
-    for (Tuple t : cats) {
-      Long placeId = t.get(pc.place.id);
-      mainCategoryMap.putIfAbsent(placeId, t.get(c.name)); // 첫 행 = 최소 pc.id
-    }
-
-    // 3) DTO 조립 (rows 순서 == 거리순 유지)
-    return rows.stream()
-        .map(
-            t -> {
-              Long id = t.get(p.id);
-              return PlaceSearchResponseDTO.builder()
-                  .id(id)
-                  .name(t.get(p.name))
-                  .category(mainCategoryMap.get(id)) // 항상 존재 전제(없으면 null 가능)
-                  .detailedCategory(t.get(p.types))
-                  .address(t.get(p.address))
-                  .latitude(t.get(p.latitude))
-                  .longitude(t.get(p.longitude))
-                  .build();
-            })
-        .toList();
+    return assemblePlaceDTO(rows);
   }
 
   @Override
@@ -192,5 +174,72 @@ public class PlaceRepositoryImpl implements PlaceRepositoryCustom {
         p.longitude, // {2}
         userLng // {3}
         );
+  }
+
+  // 메인 카테고리 + DTO 조립
+  private List<PlaceSearchResponseDTO> assemblePlaceDTO(List<Tuple> rows) {
+    if (rows.isEmpty()) return List.of();
+    List<Long> placeIds = rows.stream().map(t -> t.get(p.id)).toList();
+
+    List<Tuple> cats =
+        jpaQueryFactory
+            .select(pc.place.id, pc.id, c.name)
+            .from(pc)
+            .join(pc.category, c)
+            .where(pc.place.id.in(placeIds))
+            .orderBy(pc.place.id.asc(), pc.id.asc())
+            .fetch();
+
+    Map<Long, String> mainCategoryMap = new LinkedHashMap<>();
+    for (Tuple t : cats) {
+      Long placeId = t.get(pc.place.id);
+      mainCategoryMap.putIfAbsent(placeId, t.get(c.name));
+    }
+
+    return rows.stream()
+        .map(
+            t -> {
+              Long id = t.get(p.id);
+              return PlaceSearchResponseDTO.builder()
+                  .id(id)
+                  .name(t.get(p.name))
+                  .category(mainCategoryMap.get(id))
+                  .detailedCategory(t.get(p.types))
+                  .address(t.get(p.address))
+                  .latitude(t.get(p.latitude))
+                  .longitude(t.get(p.longitude))
+                  .build();
+            })
+        .toList();
+  }
+
+  // 전체 Place 테이블의 id 범위를 저장할 자료형 정의
+  private static class IdRange {
+    long minId, maxId; // minId: 가장 작은 id, maxId: 가장 큰 id
+  }
+
+  // 스레드 간 가시성을 보장하면서 placeIdRangeCache 변수 캐싱 (lazy 초기화용)
+  private volatile IdRange placeIdRangeCache; // volatile: 값이 바뀌면 다른 스레드도 즉시 반영된 값을 볼 수 있음
+
+  // placeIdRangeCache가 없으면 min/max를 계산해서 채우고, 있으면 캐시된 값 반환
+  private IdRange getPlaceIdRange() {
+    // 1) 먼저 캐시된 값이 있는지 확인
+    IdRange cached = placeIdRangeCache;
+    if (cached != null) return cached; // 있으면 그대로 반환
+
+    // 2) 없으면 DB에서 직접 min/max id를 계산
+    Long minId = jpaQueryFactory.select(p.id.min()).from(p).fetchOne(); // 최솟값
+    Long maxId = jpaQueryFactory.select(p.id.max()).from(p).fetchOne(); // 최댓값
+
+    // 3) null 방지: 테이블이 비어 있을 경우 0으로 기본값 대체
+    cached = new IdRange();
+    cached.minId = minId == null ? 0L : minId;
+    cached.maxId = maxId == null ? 0L : maxId;
+
+    // 4) 계산된 범위를 캐시에 저장 (다음 호출 시 DB 쿼리 생략 가능)
+    placeIdRangeCache = cached;
+
+    // 5) 새로 계산한 범위 반환
+    return cached;
   }
 }

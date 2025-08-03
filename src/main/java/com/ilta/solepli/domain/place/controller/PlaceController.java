@@ -35,8 +35,8 @@ public class PlaceController {
   public ResponseEntity<SuccessResponse<List<PlaceSearchResponse>>> searchPlaces(
       @AuthenticationPrincipal CustomUserDetails customUserDetails,
       @RequestParam String keyword,
-      @RequestParam Double userLat,
-      @RequestParam Double userLng) {
+      @RequestParam(required = false) Double userLat,
+      @RequestParam(required = false) Double userLng) {
 
     User user = SecurityUtil.getUser(customUserDetails);
     List<PlaceSearchResponse> searchContents =
