@@ -2,13 +2,13 @@ package com.ilta.solepli.domain.place.service;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -30,6 +30,7 @@ import com.ilta.solepli.domain.place.dto.response.PlaceSearchResponseDTO;
 import com.ilta.solepli.domain.place.entity.Place;
 import com.ilta.solepli.domain.place.entity.PlaceCategory;
 import com.ilta.solepli.domain.place.entity.PlaceHour;
+import com.ilta.solepli.domain.place.entity.SearchType;
 import com.ilta.solepli.domain.place.repository.PlaceRepository;
 import com.ilta.solepli.domain.solmark.place.entity.SolmarkPlace;
 import com.ilta.solepli.domain.solmark.place.repository.SolmarkPlaceRepository;
@@ -55,19 +56,30 @@ public class PlaceService {
   private final SolmarkPlaceRepository solmarkPlaceRepository;
   private final CategoryRepository categoryRepository;
 
+  private static final Long MAX_SEARCH_COUNT = 10L;
+
   @Transactional(readOnly = true)
-  public List<PlaceSearchResponse> getSearchPlaces(User user, String keyword) {
-    List<PlaceSearchResponseDTO> responseDTOList = placeRepository.getPlacesByKeyword(keyword);
-    List<Long> placeIds = responseDTOList.stream().map(dto -> dto.id()).toList();
+  public List<PlaceSearchResponse> getSearchPlaces(
+      User user, String keyword, Double userLat, Double userLng) {
 
-    Set<Long> solmarkedPlaceIds = getSolmarkedPlaceIds(user, placeIds);
+    // 장소 이름에 keyword가 포함된 장소를 거리순으로 조회하여 반환
+    List<PlaceSearchResponse> placeNameResponse =
+        getSearchResponse(user, userLat, userLng, keyword, SearchType.PLACE_NAME, MAX_SEARCH_COUNT);
 
-    List<PlaceSearchResponse> response = new ArrayList<>();
-    for (PlaceSearchResponseDTO dto : responseDTOList) {
-      PlaceSearchResponse p = PlaceSearchResponse.from(dto, solmarkedPlaceIds.contains(dto.id()));
-      response.add(p);
-    }
-    return response;
+    // 주소로 검색해올 장소 갯수 계산
+    Long remainder = MAX_SEARCH_COUNT - placeNameResponse.stream().count();
+
+    // 주소에 keyword가 포함된 장소를 거리순으로 조회하여 반환
+    List<PlaceSearchResponse> addressResponse = null;
+
+    if (remainder > 0)
+      addressResponse =
+          getSearchResponse(user, userLat, userLng, keyword, SearchType.ADDRESS, remainder);
+
+    // 스트림을 합쳐서, 앞에서부터 MAX_SEARCH_COUNT개만 리스트로 수집
+    return Stream.concat(placeNameResponse.stream(), addressResponse.stream())
+        .limit(MAX_SEARCH_COUNT)
+        .toList();
   }
 
   public void requestAddPlace(CustomUserDetails customUserDetails, RequestAddPlaceRequest req) {
@@ -201,5 +213,27 @@ public class PlaceService {
             place.addPlaceHour(placeHour);
           });
     }
+  }
+
+  private List<PlaceSearchResponse> getSearchResponse(
+      User user,
+      Double userLat,
+      Double userLng,
+      String keyword,
+      SearchType searchType,
+      Long limit) {
+
+    List<PlaceSearchResponseDTO> responseDTOList =
+        placeRepository.getPlacesByKeyword(keyword, userLat, userLng, searchType, limit);
+    List<Long> placeIds = responseDTOList.stream().map(dto -> dto.id()).toList();
+    Set<Long> solmarkedPlaceIds = getSolmarkedPlaceIds(user, placeIds);
+
+    return responseDTOList.stream()
+        .map(
+            dto -> {
+              boolean isMarked = solmarkedPlaceIds.contains(dto.id());
+              return PlaceSearchResponse.from(dto, isMarked);
+            })
+        .toList();
   }
 }
