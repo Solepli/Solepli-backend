@@ -212,34 +212,4 @@ public class PlaceRepositoryImpl implements PlaceRepositoryCustom {
             })
         .toList();
   }
-
-  // 전체 Place 테이블의 id 범위를 저장할 자료형 정의
-  private static class IdRange {
-    long minId, maxId; // minId: 가장 작은 id, maxId: 가장 큰 id
-  }
-
-  // 스레드 간 가시성을 보장하면서 placeIdRangeCache 변수 캐싱 (lazy 초기화용)
-  private volatile IdRange placeIdRangeCache; // volatile: 값이 바뀌면 다른 스레드도 즉시 반영된 값을 볼 수 있음
-
-  // placeIdRangeCache가 없으면 min/max를 계산해서 채우고, 있으면 캐시된 값 반환
-  private IdRange getPlaceIdRange() {
-    // 1) 먼저 캐시된 값이 있는지 확인
-    IdRange cached = placeIdRangeCache;
-    if (cached != null) return cached; // 있으면 그대로 반환
-
-    // 2) 없으면 DB에서 직접 min/max id를 계산
-    Long minId = jpaQueryFactory.select(p.id.min()).from(p).fetchOne(); // 최솟값
-    Long maxId = jpaQueryFactory.select(p.id.max()).from(p).fetchOne(); // 최댓값
-
-    // 3) null 방지: 테이블이 비어 있을 경우 0으로 기본값 대체
-    cached = new IdRange();
-    cached.minId = minId == null ? 0L : minId;
-    cached.maxId = maxId == null ? 0L : maxId;
-
-    // 4) 계산된 범위를 캐시에 저장 (다음 호출 시 DB 쿼리 생략 가능)
-    placeIdRangeCache = cached;
-
-    // 5) 새로 계산한 범위 반환
-    return cached;
-  }
 }
