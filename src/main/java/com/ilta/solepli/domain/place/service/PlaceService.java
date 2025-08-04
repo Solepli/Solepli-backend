@@ -67,17 +67,26 @@ public class PlaceService {
         getSearchResponse(user, userLat, userLng, keyword, SearchType.PLACE_NAME, MAX_SEARCH_COUNT);
 
     // 주소로 검색해올 장소 갯수 계산
-    Long remainder = MAX_SEARCH_COUNT - placeNameResponse.stream().count();
+    Long remain = MAX_SEARCH_COUNT - placeNameResponse.size();
+    if (remain <= 0) return placeNameResponse;
 
-    // 주소에 keyword가 포함된 장소를 거리순으로 조회하여 반환
-    List<PlaceSearchResponse> addressResponse = null;
+    // 중복 방지를 위해 이미 가져온 ID 저장
+    Set<Long> alreadyIncludedIds =
+        placeNameResponse.stream().map(PlaceSearchResponse::id).collect(Collectors.toSet());
 
-    if (remainder > 0)
-      addressResponse =
-          getSearchResponse(user, userLat, userLng, keyword, SearchType.ADDRESS, remainder);
+    // 주소로 보충 검색 (오버샘플링으로 중복 걸러낼 여유 확보)
+    List<PlaceSearchResponse> addressRaw =
+        getSearchResponse(user, userLat, userLng, keyword, SearchType.ADDRESS, remain * 2);
 
-    // 스트림을 합쳐서, 앞에서부터 MAX_SEARCH_COUNT개만 리스트로 수집
-    return Stream.concat(placeNameResponse.stream(), addressResponse.stream())
+    // 중복 제거 후 부족한 만큼만 채우기
+    List<PlaceSearchResponse> addressFiltered =
+        addressRaw.stream()
+            .filter(res -> !alreadyIncludedIds.contains(res.id()))
+            .limit(remain)
+            .toList();
+
+    // 두 리스트 합치기
+    return Stream.concat(placeNameResponse.stream(), addressFiltered.stream())
         .limit(MAX_SEARCH_COUNT)
         .toList();
   }
