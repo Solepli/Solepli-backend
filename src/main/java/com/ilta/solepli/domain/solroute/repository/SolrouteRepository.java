@@ -22,4 +22,6 @@ public interface SolrouteRepository extends JpaRepository<Solroute, Long> {
   @Query(
       "SELECT s FROM Solroute s WHERE s.user = :user AND s.deletedAt IS NULL ORDER BY s.createdAt DESC")
   List<Solroute> findAllByUserId(User user);
+
+  Optional<Solroute> findTop1ByUserAndNameStartingWithOrderByIdDesc(User user, String name);
 }
