@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -42,11 +43,16 @@ public class SolrouteService {
   private final PlaceRepository placeRepository;
   private final SolmarkPlaceRepository solmarkPlaceRepository;
 
+  private static final int INITIAL_SUFFIX = 1;
+  private static final String SUFFIX_SEPARATOR = " "; // 접미사 구분자
+
   @Transactional
   public void createSolroute(User user, SolrouteCreateRequest request) {
 
+    String uniqueName = generateUniqueName(user, request.name());
+
     Solroute solroute =
-        Solroute.builder().iconId(request.iconId()).name(request.name()).user(user).build();
+        Solroute.builder().iconId(request.iconId()).name(uniqueName).user(user).build();
 
     List<PlaceInfo> placeInfos = request.placeInfos();
     for (PlaceInfo placeInfo : placeInfos) {
@@ -244,5 +250,29 @@ public class SolrouteService {
     return solrouteRepository
         .findByIdAndUserWithPlaces(solrouteId, user)
         .orElseThrow(() -> new CustomException(ErrorCode.SOLROUTE_ACCESS_DENIED));
+  }
+
+  private String generateUniqueName(User user, String baseName) {
+    Optional<Solroute> latest =
+        solrouteRepository.findTop1ByUserAndNameStartingWithOrderByIdDesc(user, baseName);
+
+    if (latest.isEmpty()) return baseName;
+
+    String latestName = latest.get().getName();
+
+    // baseName 자체만 있는 경우 (e.g. "여행") → "여행1"부터 시작
+    if (latestName.equals(baseName)) {
+      return baseName + SUFFIX_SEPARATOR + INITIAL_SUFFIX;
+    }
+
+    // baseName 뒤에 숫자가 붙어 있다면 파싱
+    String suffixStr = latestName.substring(baseName.length()).trim();
+    try {
+      int suffix = Integer.parseInt(suffixStr);
+      return baseName + SUFFIX_SEPARATOR + (suffix + 1);
+    } catch (NumberFormatException e) {
+      // 잘못된 숫자 형식인 경우 fallback
+      return baseName + SUFFIX_SEPARATOR + INITIAL_SUFFIX;
+    }
   }
 }
