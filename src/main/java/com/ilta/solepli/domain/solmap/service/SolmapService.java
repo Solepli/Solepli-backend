@@ -328,6 +328,11 @@ public class SolmapService {
   @Transactional(readOnly = true)
   public List<RelatedSearchResponse> getRelatedSearch(
       String keyword, Double userLat, Double userLng, CustomUserDetails customUserDetails) {
+    // lat/lng는 "둘 다 있거나 둘 다 없음"만 허용
+    if ((userLat == null) ^ (userLng == null)) {
+      throw new CustomException(ErrorCode.INVALID_LATLNG_PAIR);
+    }
+
     // 로그인, 비로그인 판별
     User user = SecurityUtil.getUser(customUserDetails);
     // 구 검색 결과 스트림
@@ -336,17 +341,196 @@ public class SolmapService {
     Stream<RelatedSearchResponse> neighborhoodResponses =
         getRelatedSearchResponsesByNeighborhood(keyword);
     // 장소 검색 결과 스트림 (거리순)
+    // 사용자 위치 정보 없을 시 연관순(텍스트 점수)으로 분기
     Stream<RelatedSearchResponse> nameResponses =
-        getRelatedSearchResponsesByName(keyword, userLat, userLng, user);
+        (userLat != null)
+            ? getRelatedSearchResponsesByName(keyword, userLat, userLng, user)
+            : getRelatedSearchResponsesByNameRank(keyword, user); // 좌표 없음 → 연관순
     // 주소 검색 결과 스트림
+    // 사용자 위치 정보 없을 시 주소매칭 랜덤(시드)으로 분기
     Stream<RelatedSearchResponse> addressResponses =
-        getRelatedSearchResponsesByAddress(keyword, userLat, userLng, user);
+        (userLat != null)
+            ? getRelatedSearchResponsesByAddress(keyword, userLat, userLng, user)
+            : getRelatedSearchResponsesByAddressRank(keyword, user);
 
     // 스트림을 합쳐서, 앞에서부터 MAX개만 리스트로 수집
     return Stream.of(districtResponses, neighborhoodResponses, nameResponses, addressResponses)
         .flatMap(Function.identity())
         .limit(MAX_RELATED_SEARCH)
         .toList();
+  }
+
+  /** - 장소명 포함 대상에 대해 접두 가산점(>부분) + 시드 타이브레이크로 ID 조회 - fetch-join 로딩 후 topIds 순서 재구성 → DTO 매핑 */
+  private Stream<RelatedSearchResponse> getRelatedSearchResponsesByNameRank(
+      String keyword, User user) {
+    String norm = normalize(keyword); // 입력 정규화
+    String normNoSpace = toNoSpaceKey(norm); // DB REPLACE(' ','')와 동일 규칙
+    String seed = buildSeed(normNoSpace); // 동일 날짜에서는 항상 같은 순서를 만들기 위한 시드(날짜+키)
+
+    // keyword가 장소명에 포함된 장소 ID 조회
+    List<Long> topIds = selectTopIdsByNameNoGeo(normNoSpace, seed);
+    if (topIds.isEmpty()) return Stream.empty();
+
+    // 조회된 장소 ID → Place(+카테고리) fetch-join 로딩 후 topIds 순서로 재구성
+    List<Place> ordered = fetchPlacesInIdOrder(topIds);
+    // 해당 Place들에 대한 사용자 쏠마크 여부 집합 조회
+    Set<Long> solmarkedPlaceIds = getSolmarkedPlaceIds(user, ordered);
+
+    // DTO 매핑
+    return ordered.stream()
+        .map(
+            p -> {
+              // 각 장소 쏠마크 여부 판별
+              boolean isMarked = solmarkedPlaceIds.contains(p.getId());
+
+              return RelatedSearchResponse.builder()
+                  .id(p.getId())
+                  .type(SearchType.PLACE)
+                  .name(p.getName())
+                  .address(p.getAddress())
+                  .category(getMainCategory(p))
+                  .isMarked(isMarked)
+                  .build();
+            });
+  }
+
+  /**
+   * 키워드 정규화(NFKC→lower→공백 정리) 후 공백 제거 키/시드 생성 - 주소에 포함되는 PLACE를 시드 기반 랜덤 정렬로 ID 선발 - fetch-join으로
+   * Place+카테고리 로딩 → topIds 순서 복원 → DTO 매핑
+   */
+  private Stream<RelatedSearchResponse> getRelatedSearchResponsesByAddressRank(
+      String keyword, User user) {
+    String norm = normalize(keyword); // 입력 정규화
+    String normNoSpace = toNoSpaceKey(norm); // DB REPLACE(' ','')와 동일 규칙
+    String seed = buildSeed(normNoSpace); // 동일 날짜에서는 항상 같은 순서를 만들기 위한 시드(날짜+키)
+
+    // keyword가 주소명에 포함된 장소 ID 조회
+    List<Long> topIds = selectTopIdsByAddressNoGeo(normNoSpace, seed);
+    if (topIds.isEmpty()) return Stream.empty();
+
+    // 조회된 장소 ID → Place(+카테고리) fetch-join 로딩 후 topIds 순서로 재구성
+    List<Place> ordered = fetchPlacesInIdOrder(topIds);
+    // 해당 Place들에 대한 사용자 쏠마크 여부 집합 조회
+    Set<Long> solmarkedPlaceIds = getSolmarkedPlaceIds(user, ordered);
+
+    // DTO 매핑
+    return ordered.stream()
+        .map(
+            place -> {
+              // 각 장소 쏠마크 여부 판별
+              boolean isMarked = solmarkedPlaceIds.contains(place.getId());
+
+              return RelatedSearchResponse.builder()
+                  .id(place.getId())
+                  .type(SearchType.PLACE)
+                  .name(place.getName())
+                  .address(place.getAddress())
+                  .category(getMainCategory(place))
+                  .isMarked(isMarked)
+                  .build();
+            });
+  }
+
+  /**
+   * 주소 포함 + 시드 기반 랜덤 정렬로 상위 ID 조회
+   *
+   * @param normNoSpace 공백 제거 키(입력측)
+   * @param seed 결정론적 랜덤 시드(일자+키)
+   */
+  private List<Long> selectTopIdsByAddressNoGeo(String normNoSpace, String seed) {
+    NumberExpression<Integer> seeded =
+        Expressions.numberTemplate(Integer.class, "crc32(concat({0}, {1}))", seed, p.id);
+
+    return jpaQueryFactory
+        .select(p.id)
+        .from(p)
+        .where(
+            Expressions.booleanTemplate(
+                "REPLACE(LOWER({0}), ' ', '') LIKE CONCAT('%', {1}, '%')", p.address, normNoSpace))
+        .orderBy(seeded.asc(), p.id.desc())
+        .limit(SolmapService.MAX_RELATED_SEARCH)
+        .fetch();
+  }
+
+  /**
+   * 이름 포함 대상에 대해 접두/부분 점수 + 시드 타이브레이크로 상위 ID 조회
+   *
+   * @param normNoSpace 공백 제거 키
+   * @param seed 같은 날짜/키면 동일 순서를 위한 시드
+   */
+  private List<Long> selectTopIdsByNameNoGeo(String normNoSpace, String seed) {
+    // 접두 매칭(가산점)
+    NumberExpression<Integer> namePrefix =
+        Expressions.numberTemplate(
+            Integer.class,
+            "CASE WHEN REPLACE(LOWER({0}), ' ', '') LIKE CONCAT({1}, '%') THEN 1 ELSE 0 END",
+            p.name,
+            normNoSpace);
+
+    // 부분 매칭(가산점)
+    NumberExpression<Integer> nameContains =
+        Expressions.numberTemplate(
+            Integer.class,
+            "CASE WHEN REPLACE(LOWER({0}), ' ', '') LIKE CONCAT('%', {1}, '%') THEN 1 ELSE 0 END",
+            p.name,
+            normNoSpace);
+
+    // 접두 > 부분 가중치
+    NumberExpression<Double> score =
+        Expressions.numberTemplate(Double.class, "({0}*1.0)+({1}*0.5)", namePrefix, nameContains);
+
+    // 시드 타이브레이크
+    NumberExpression<Integer> seeded =
+        Expressions.numberTemplate(Integer.class, "crc32(concat({0}, {1}))", seed, p.id);
+
+    return jpaQueryFactory
+        .select(p.id)
+        .from(p)
+        .where(
+            Expressions.booleanTemplate(
+                "REPLACE(LOWER({0}), ' ', '') LIKE CONCAT('%', {1}, '%')", p.name, normNoSpace))
+        .orderBy(score.desc(), seeded.asc(), p.id.desc()) // 점수 우선 → 시드 → id
+        .limit(MAX_RELATED_SEARCH)
+        .fetch();
+  }
+
+  /** - Place + placeCategories + category를 fetch-join으로 로딩(N+1 방지) - topIds 순서로 재구성하여 반환 */
+  private List<Place> fetchPlacesInIdOrder(List<Long> topIds) {
+    List<Place> places =
+        jpaQueryFactory
+            .select(p)
+            .distinct()
+            .from(p)
+            .leftJoin(p.placeCategories, pc)
+            .fetchJoin()
+            .leftJoin(pc.category, c)
+            .fetchJoin()
+            .where(p.id.in(topIds))
+            .fetch();
+
+    Map<Long, Place> byId =
+        places.stream().collect(Collectors.toMap(Place::getId, Function.identity()));
+
+    return topIds.stream().map(byId::get).filter(Objects::nonNull).toList();
+  }
+
+  /** 입력 정규화 - NFKC(호환문자 표준화) → 소문자(Locale.ROOT) → 다중 공백 1칸 + trim */
+  private String normalize(String s) {
+    if (s == null) return "";
+    String t = java.text.Normalizer.normalize(s, java.text.Normalizer.Form.NFKC);
+    t = t.toLowerCase(java.util.Locale.ROOT);
+    t = t.replaceAll("\\s+", " ").trim();
+    return t;
+  }
+
+  /** DB의 REPLACE(' ','')와 동일 규칙으로 ' '만 제거 */
+  private static String toNoSpaceKey(String norm) {
+    return norm.replace(" ", "");
+  }
+
+  /** 같은 날짜에 같은 순서를 만들기 위한 시드(날짜+키) */
+  private static String buildSeed(String normNoSpace) {
+    return java.time.LocalDate.now() + "|" + normNoSpace;
   }
 
   private Stream<RelatedSearchResponse> getRelatedSearchResponsesByAddress(
