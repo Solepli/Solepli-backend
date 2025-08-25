@@ -113,8 +113,8 @@ public class SolmapController {
   @GetMapping("search/related")
   public ResponseEntity<SuccessResponse<List<RelatedSearchResponse>>> getRelatedSearch(
       @RequestParam String keyword,
-      @RequestParam Double userLat,
-      @RequestParam Double userLng,
+      @RequestParam(required = false) Double userLat,
+      @RequestParam(required = false) Double userLng,
       @AuthenticationPrincipal CustomUserDetails customUserDetails) {
 
     List<RelatedSearchResponse> response =

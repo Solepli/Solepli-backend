@@ -82,6 +82,7 @@ public enum ErrorCode {
   CATEGORY_NOT_FOUND(HttpStatus.BAD_REQUEST, "존재하지 않는 카테고리입니다."),
   UNCATEGORIZED(HttpStatus.BAD_REQUEST, "카테고리가 지정되지 않은 장소입니다."),
   REGION_NOT_FOUND(HttpStatus.NOT_FOUND, "유효하지 않은 지역명 입니다."),
+  INVALID_LATLNG_PAIR(HttpStatus.BAD_REQUEST, "위도/경도는 둘 다 전달하거나 둘 다 생략해야 합니다."),
 
   // 쏠렉트 관련 에러
   SOLLECT_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 쏠렉트입니다."),
